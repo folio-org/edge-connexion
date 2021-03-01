@@ -1,29 +1,46 @@
 package org.folio.edge.connexion;
 
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.ext.web.Router;
+import io.vertx.core.buffer.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.folio.edge.core.EdgeVerticle;
+import org.folio.edge.core.EdgeVerticleCore;
 
-public class MainVerticle extends EdgeVerticle {
+import static org.folio.edge.core.Constants.SYS_PORT;
 
-  private static final Logger logger = LogManager.getLogger(MainVerticle.class);
+public class MainVerticle extends EdgeVerticleCore {
 
-  @Override
-  public void start(Promise<Void> promise) {
-    logger.info("start");
-    promise.complete();
-  }
+    private final int MAX_RECORD_SIZE = 100000;
+    private static final Logger logger = LogManager.getLogger(MainVerticle.class);
+    private int maxRecordSize = MAX_RECORD_SIZE;
 
-  @Override
-  public void stop(Promise<Void> promise) {
-    logger.info("stpp");
-    promise.complete();
-  }
+    void setMaxRecordSize(int sz) {
+        maxRecordSize = sz;
+    }
 
-  @Override
-  public Router defineRoutes() {
-    return null;
-  }
+    int getMaxRecordSize() {
+      return maxRecordSize;
+    }
+
+    int port;
+    @Override
+    public void start(Promise<Void> promise) {
+        Future.<Void>future(p -> super.start(p)).<Void>compose(res -> {
+            port = config().getInteger(SYS_PORT);
+            return vertx.createNetServer()
+                    .connectHandler(socket -> {
+                        Buffer buffer = Buffer.buffer();
+                        socket.handler(chunk -> {
+                            buffer.appendBuffer(chunk);
+                            if (buffer.length() > maxRecordSize) {
+                                socket.close();
+                            }
+                        });
+                        socket.endHandler(end -> {
+                            logger.info("Got buffer of size {}", buffer.length());
+                        });
+                    }).listen(port).mapEmpty();
+        }).onComplete(promise);
+    }
 }
