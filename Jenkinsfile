@@ -1,5 +1,5 @@
 buildMvn {
-  publishModDescriptor = 'yes'
+  publishModDescriptor = 'no'
   mvnDeploy = 'yes'
 
   buildNode = 'jenkins-agent-java11'
