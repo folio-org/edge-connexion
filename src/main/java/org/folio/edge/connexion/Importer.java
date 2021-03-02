@@ -17,11 +17,15 @@ public class Importer {
   private final List<Buffer> records = new LinkedList<>();
 
   private static int parseValue(Buffer buffer, int i, Buffer v) {
+    // two length specs
+    //  1. single character specifies, where @=0, A=1, B=2, ... DEL=63 (only up to 63 in length !!)
+    //  2. multiple digits, followed by value (a value may not start with a digit!!)
     i++;
     int len = buffer.getByte(i) - 64;
     if (len >= 0) {
-      i++;
+      i++; // 1: single character length, skip length itself
     } else {
+      // 2: digits makes up a number.
       int llen = 0;
       while (buffer.getByte(i + llen) >= 48 && buffer.getByte(i + llen) < 58) {
         llen++;
@@ -55,6 +59,12 @@ public class Importer {
     return records;
   }
 
+  /**
+   * Parse request from OCLC Connexion client.
+   * May throw exception for bad buffer.
+   * @param buffer
+   * $throws IndexOutOfBoundsException, NumberFormatException.
+   */
   void parseRequest(Buffer buffer) {
     int i = 0;
     while (i < buffer.length()) {
@@ -77,6 +87,11 @@ public class Importer {
     }
   }
 
+  /**
+   * Parse request from OCLC Connexion client
+   * @param buffer
+   * @return Future failed future on bad buffer. succeeded future otherwise.
+   */
   Future<Void> importFromOCLC(Buffer buffer) {
     try {
       parseRequest(buffer);
