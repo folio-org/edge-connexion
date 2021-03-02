@@ -1,0 +1,21 @@
+{
+  "id": "${artifactId}-${version}",
+  "name": "edge-connexion",
+  "provides": [
+    {
+      "id": "connexion",
+      "version": "1.0"
+    }
+  ],
+  "requires" : [
+    {
+      "id" : "copycat-imports",
+      "version" : "1.0"
+    },
+    {
+      "id" : "copycat-profiles",
+      "version" : "1.0"
+    }
+  ],
+  "permissionSets" : [ ]
+}
