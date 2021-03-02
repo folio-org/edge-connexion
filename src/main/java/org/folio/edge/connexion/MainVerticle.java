@@ -5,9 +5,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.folio.edge.core.Constants;
 import org.folio.edge.core.EdgeVerticleCore;
-
-import static org.folio.edge.core.Constants.SYS_PORT;
 
 public class MainVerticle extends EdgeVerticleCore {
 
@@ -28,7 +27,7 @@ public class MainVerticle extends EdgeVerticleCore {
   @Override
   public void start(Promise<Void> promise) {
     Future.<Void>future(p -> super.start(p)).<Void>compose(res -> {
-      port = config().getInteger(SYS_PORT, DEFAULT_PORT);
+      port = config().getInteger(Constants.SYS_PORT, DEFAULT_PORT);
       return vertx.createNetServer()
           .connectHandler(socket -> {
             // handle both HTTP For /admin/health and request Connexion client
@@ -66,7 +65,7 @@ public class MainVerticle extends EdgeVerticleCore {
             socket.endHandler(end -> {
               if (!handled[0]) {
                 Importer importer = new Importer();
-                importer.importFromOCLC(buffer)
+                importer.importRequest(buffer)
                     .onFailure(cause -> log.warn(cause.getMessage(), cause))
                     .onSuccess(complete -> log.info("Importing successfully"));
               }

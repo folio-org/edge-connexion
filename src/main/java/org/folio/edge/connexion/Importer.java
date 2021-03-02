@@ -2,11 +2,10 @@ package org.folio.edge.connexion;
 
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Importer {
   private static final Logger log = LogManager.getLogger(Importer.class);
@@ -62,8 +61,7 @@ public class Importer {
   /**
    * Parse request from OCLC Connexion client.
    * May throw exception for bad buffer.
-   * @param buffer
-   * $throws IndexOutOfBoundsException, NumberFormatException.
+   * @param buffer OCOC Connexion buffer.
    */
   void parseRequest(Buffer buffer) {
     int i = 0;
@@ -88,11 +86,11 @@ public class Importer {
   }
 
   /**
-   * Parse request from OCLC Connexion client
-   * @param buffer
+   * Parse request from OCLC Connexion client.
+   * @param buffer OCLC Connexion buffer.
    * @return Future failed future on bad buffer. succeeded future otherwise.
    */
-  Future<Void> importFromOCLC(Buffer buffer) {
+  Future<Void> importRequest(Buffer buffer) {
     try {
       parseRequest(buffer);
     } catch (Exception e) {

@@ -57,7 +57,7 @@ public class ImporterTest {
   @Test
   public void testImportFromOCLC(TestContext context) {
     Importer importer = new Importer();
-    importer.importFromOCLC(Buffer.buffer("U5!bcdeA2fgP3hij0001012345"))
+    importer.importRequest(Buffer.buffer("U5!bcdeA2fgP3hij0001012345"))
         .onComplete(context.asyncAssertSuccess(res -> {
           Assert.assertEquals("!bcde", importer.getUser());
           Assert.assertEquals("fg", importer.getLocalUser());
@@ -69,14 +69,14 @@ public class ImporterTest {
   @Test
   public void testImportFromOCLCOutOfBounds(TestContext context) {
     Importer importer = new Importer();
-    importer.importFromOCLC(Buffer.buffer("U19abcde"))
+    importer.importRequest(Buffer.buffer("U19abcde"))
         .onComplete(context.asyncAssertFailure());
   }
 
   @Test
   public void testImportFromOCLCNumberFormat(TestContext context) {
     Importer importer = new Importer();
-    importer.importFromOCLC(Buffer.buffer("_"))
+    importer.importRequest(Buffer.buffer("_"))
         .onComplete(context.asyncAssertFailure());
   }
 
