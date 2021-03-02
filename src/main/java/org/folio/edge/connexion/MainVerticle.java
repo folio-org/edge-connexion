@@ -13,7 +13,7 @@ public class MainVerticle extends EdgeVerticleCore {
 
     private static final int MAX_RECORD_SIZE = 100000;
     private static final int DEFAULT_PORT = 8081;
-    private static final Logger logger = LogManager.getLogger(MainVerticle.class);
+    private static final Logger log = LogManager.getLogger(MainVerticle.class);
     private int maxRecordSize = MAX_RECORD_SIZE;
 
     void setMaxRecordSize(int sz) {
@@ -45,8 +45,9 @@ public class MainVerticle extends EdgeVerticleCore {
                                 if (j < buffer.length() && buffer.getByte(j) == '\n') {
                                   if ("GET ".equals(buffer.getString(0, 4))) {
                                     // close now, ignoring keep alive (which is our right!)
-                                    socket.write("HTTP/1.0 200 OK\r\n");
-                                    socket.close();
+                                    log.debug("Got HTTP: {}", buffer.toString());
+                                    socket.write("HTTP/1.0 200 OK\r\n\r\n")
+                                        .onComplete(x -> socket.close());
                                   }
                                 }
                               }
@@ -56,7 +57,7 @@ public class MainVerticle extends EdgeVerticleCore {
                             }
                         });
                         socket.endHandler(end -> {
-                            logger.info("Got buffer of size {}", buffer.length());
+                            log.info("Got buffer of size {}", buffer.length());
                         });
                     }).listen(port).mapEmpty();
         }).onComplete(promise);
