@@ -57,9 +57,9 @@ public class ImporterTest {
   @Test
   public void testImportFromOCLC(TestContext context) {
     Importer importer = new Importer();
-    importer.importFromOCLC(Buffer.buffer("U5abcdeA2fgP3hij0001012345"))
+    importer.importFromOCLC(Buffer.buffer("U5!bcdeA2fgP3hij0001012345"))
         .onComplete(context.asyncAssertSuccess(res -> {
-          Assert.assertEquals("abcde", importer.getUser());
+          Assert.assertEquals("!bcde", importer.getUser());
           Assert.assertEquals("fg", importer.getLocalUser());
           Assert.assertEquals("hij", importer.getPassword());
           Assert.assertEquals("0001012345", importer.getRecords().get(0).toString());
