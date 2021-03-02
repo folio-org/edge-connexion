@@ -31,9 +31,9 @@ public class MainVerticle extends EdgeVerticleCore {
       port = config().getInteger(SYS_PORT, DEFAULT_PORT);
       return vertx.createNetServer()
           .connectHandler(socket -> {
+            // handle both HTTP For /admin/health and request Connexion client
             boolean [] handled = new boolean[] { false };
             Buffer buffer = Buffer.buffer();
-            // handle both HTTP For /admin/health and for the Connexion callback
             socket.handler(chunk -> {
               buffer.appendBuffer(chunk);
               log.info("handler size {} , max {}", buffer.length(), maxRecordSize);
