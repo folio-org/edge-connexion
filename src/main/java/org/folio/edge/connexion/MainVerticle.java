@@ -15,6 +15,7 @@ public class MainVerticle extends EdgeVerticleCore {
   private static final int DEFAULT_PORT = 8081;
   private static final Logger log = LogManager.getLogger(MainVerticle.class);
   private int maxRecordSize = MAX_RECORD_SIZE;
+  int port;
 
   void setMaxRecordSize(int sz) {
     maxRecordSize = sz;
@@ -24,18 +25,24 @@ public class MainVerticle extends EdgeVerticleCore {
     return maxRecordSize;
   }
 
-  int port;
   @Override
   public void start(Promise<Void> promise) {
     Future.<Void>future(p -> super.start(p)).<Void>compose(res -> {
       port = config().getInteger(SYS_PORT, DEFAULT_PORT);
       return vertx.createNetServer()
           .connectHandler(socket -> {
-
+            boolean [] handled = new boolean[] { false };
             Buffer buffer = Buffer.buffer();
             // handle both HTTP For /admin/health and for the Connexion callback
             socket.handler(chunk -> {
               buffer.appendBuffer(chunk);
+              log.info("handler size {} , max {}", buffer.length(), maxRecordSize);
+              if (buffer.length() > maxRecordSize) {
+                log.warn("OCLC import size exceeded {}", maxRecordSize);
+                handled[0] = true;
+                socket.close();
+                return;
+              }
               for (int i = 0; i < buffer.length(); i++) {
                 // look for LFCRLF or LFLF
                 if (buffer.getByte(i) == '\n') {
@@ -49,16 +56,20 @@ public class MainVerticle extends EdgeVerticleCore {
                       log.debug("Got HTTP: {}", buffer.toString());
                       socket.write("HTTP/1.0 200 OK\r\n\r\n")
                           .onComplete(x -> socket.close());
+                      handled[0] = true;
+                      return;
                     }
                   }
                 }
               }
-              if (buffer.length() > maxRecordSize) {
-                socket.close();
-              }
             });
             socket.endHandler(end -> {
-              log.info("Got buffer of size {}", buffer.length());
+              if (!handled[0]) {
+                Importer importer = new Importer();
+                importer.importFromOCLC(buffer)
+                    .onFailure(cause -> log.warn(cause.getMessage(), cause))
+                    .onSuccess(complete -> log.info("Importing successfully"));
+              }
             });
           }).listen(port).mapEmpty();
     }).onComplete(promise);

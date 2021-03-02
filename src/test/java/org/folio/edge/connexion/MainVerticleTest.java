@@ -3,6 +3,7 @@ package org.folio.edge.connexion;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetClient;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.client.WebClient;
@@ -48,4 +49,35 @@ public class MainVerticleTest {
             .onComplete(context.asyncAssertSuccess())
     ));
   }
+
+  @Test
+  public void testImportWithUserOK(TestContext context) {
+    final int port = 9230;
+    JsonObject config = new JsonObject();
+    config.put(SYS_PORT, port);
+
+    NetClient netClient = vertx.createNetClient();
+    netClient.connect(port, "localhost").onComplete(context.asyncAssertFailure(f ->
+        vertx.deployVerticle(new MainVerticle(), new DeploymentOptions().setConfig(config))
+            .compose(x -> netClient.connect(port, "localhost").compose(socket -> socket.write("U6MyUser")))
+            .onComplete(context.asyncAssertSuccess())
+    ));
+  }
+
+  @Test
+  public void testImportTooLargeMessage(TestContext context) {
+    final int port = 9230;
+    JsonObject config = new JsonObject();
+    config.put(SYS_PORT, port);
+
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setMaxRecordSize(10);
+    NetClient netClient = vertx.createNetClient();
+    netClient.connect(port, "localhost").onComplete(context.asyncAssertFailure(f ->
+        vertx.deployVerticle(mainVerticle, new DeploymentOptions().setConfig(config))
+            .compose(x -> netClient.connect(port, "localhost").compose(socket -> socket.write("00006123456")))
+            .onComplete(context.asyncAssertSuccess())
+    ));
+  }
+
 }
