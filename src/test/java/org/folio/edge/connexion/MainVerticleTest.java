@@ -1,6 +1,7 @@
 package org.folio.edge.connexion;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
@@ -17,6 +18,9 @@ import static org.folio.edge.core.Constants.SYS_PORT;
 
 @RunWith(VertxUnitRunner.class)
 public class MainVerticleTest {
+  // RMB has a utility to find a free port, and edge-common has its own testing..
+  // we will use the same port as in Okapi does it its testing mode.
+  private final int PORT = 9230;
 
   Vertx vertx;
   @Before
@@ -36,46 +40,39 @@ public class MainVerticleTest {
     Assert.assertEquals(100, v.getMaxRecordSize());
   }
 
+  Future<Void> deploy(MainVerticle mainVerticle) {
+    JsonObject config = new JsonObject();
+    config.put(SYS_PORT, PORT);
+    return vertx.deployVerticle(mainVerticle, new DeploymentOptions().setConfig(config))
+        .mapEmpty();
+  }
+
   @Test
   public void testAdminHealth(TestContext context) {
-    final int port = 9230;
-    JsonObject config = new JsonObject();
-    config.put(SYS_PORT, port);
-
     WebClient webClient = WebClient.create(vertx);
-    webClient.get(port, "localhost", "/admin/health").send().onComplete(context.asyncAssertFailure(f ->
-        vertx.deployVerticle(new MainVerticle(), new DeploymentOptions().setConfig(config))
-            .compose(x -> webClient.get(port, "localhost", "/admin/health").send())
-            .onComplete(context.asyncAssertSuccess())
-    ));
+    deploy(new MainVerticle())
+        .compose(x -> webClient.get(PORT, "localhost", "/admin/health").send())
+        .onComplete(context.asyncAssertSuccess());
   }
 
   @Test
   public void testImportWithUserOK(TestContext context) {
-    final int port = 9230;
-    JsonObject config = new JsonObject();
-    config.put(SYS_PORT, port);
-
     NetClient netClient = vertx.createNetClient();
-    netClient.connect(port, "localhost").onComplete(context.asyncAssertFailure(f ->
-        vertx.deployVerticle(new MainVerticle(), new DeploymentOptions().setConfig(config))
-            .compose(x -> netClient.connect(port, "localhost").compose(socket -> socket.write("U6MyUser")))
-            .onComplete(context.asyncAssertSuccess())
-    ));
+    deploy(new MainVerticle())
+        .compose(x -> netClient.connect(PORT, "localhost")
+            .compose(socket -> socket.write("U6MyUser")))
+        .onComplete(context.asyncAssertSuccess());
   }
 
   @Test
   public void testImportTooLargeMessage(TestContext context) {
-    final int port = 9230;
-    JsonObject config = new JsonObject();
-    config.put(SYS_PORT, port);
-
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setMaxRecordSize(10);
     NetClient netClient = vertx.createNetClient();
-    netClient.connect(port, "localhost").onComplete(context.asyncAssertFailure(f ->
-        vertx.deployVerticle(mainVerticle, new DeploymentOptions().setConfig(config))
-            .compose(x -> netClient.connect(port, "localhost").compose(socket -> socket.write("00006123456")))
+    netClient.connect(PORT, "localhost").onComplete(context.asyncAssertFailure(f ->
+        deploy(mainVerticle)
+            .compose(x -> netClient.connect(PORT, "localhost")
+                .compose(socket -> socket.write("00006123456")))
             .onComplete(context.asyncAssertSuccess())
     ));
   }
