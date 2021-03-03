@@ -2,10 +2,18 @@ package org.folio.edge.connexion;
 
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpRequest;
+import io.vertx.ext.web.client.WebClient;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.folio.edge.core.Constants;
+import org.folio.edge.core.cache.TokenCache;
+import org.folio.edge.core.model.ClientInfo;
+import org.folio.edge.core.security.SecureStore;
+import org.folio.edge.core.utils.ApiKeyUtils;
 
 public class Importer {
   private static final Logger log = LogManager.getLogger(Importer.class);
@@ -98,5 +106,46 @@ public class Importer {
       return Future.failedFuture(e);
     }
     return Future.succeededFuture();
+  }
+
+  Future<Void> importRequest(Buffer buffer, WebClient webClient, SecureStore secureStore,
+                             JsonObject config) {
+    return importRequest(buffer).compose(res -> {
+      String loginStrategy = config.getString("login_strategy", "key");
+      String tenant = null;
+      String clientId = null;
+      String username = null;
+
+      switch (loginStrategy) {
+        case "key":
+          // scenario 1.. api key in localUser
+          ClientInfo clientInfo;
+          try {
+            clientInfo = ApiKeyUtils.parseApiKey(getLocalUser());
+          } catch (ApiKeyUtils.MalformedApiKeyException e) {
+            return Future.failedFuture("access defined");
+          }
+          tenant = clientInfo.tenantId;
+          clientId = clientInfo.salt;
+          username = clientInfo.username;
+          break;
+        default:
+          break;
+      }
+      EdgeClient edgeClient = new EdgeClient(config.getString(Constants.SYS_OKAPI_URL),
+          webClient, TokenCache.getInstance(), tenant, clientId, username)
+          .withStore(secureStore);
+      HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
+          .get("/copycat/profiles")
+          .putHeader("Accept", "application/json");
+      return edgeClient.getToken(bufferHttpRequest)
+          .compose(request -> request.send())
+          .compose(response -> {
+            if (response.statusCode() != 200) {
+              return Future.failedFuture("/copycat/profiles got status " + response.statusCode());
+            }
+            return Future.succeededFuture();
+          });
+    });
   }
 }

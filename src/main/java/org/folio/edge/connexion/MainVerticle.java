@@ -3,6 +3,9 @@ package org.folio.edge.connexion;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.Constants;
@@ -62,8 +65,14 @@ public class MainVerticle extends EdgeVerticleCore {
               }
             });
             socket.endHandler(end -> {
+              Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
+              WebClientOptions webClientOptions = new WebClientOptions()
+                  .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
+                  .setConnectTimeout(timeout);
+              WebClient webClient = WebClient.create(vertx, webClientOptions);
+
               Importer importer = new Importer();
-              importer.importRequest(buffer)
+              importer.importRequest(buffer, webClient, secureStore, config())
                   .onFailure(cause -> log.warn(cause.getMessage(), cause))
                   .onSuccess(complete -> log.info("Importing successfully"));
             });
