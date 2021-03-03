@@ -31,14 +31,13 @@ public class MainVerticle extends EdgeVerticleCore {
       return vertx.createNetServer()
           .connectHandler(socket -> {
             // handle both HTTP For /admin/health and request Connexion client
-            boolean [] handled = new boolean[] { false };
             Buffer buffer = Buffer.buffer();
             socket.handler(chunk -> {
               buffer.appendBuffer(chunk);
               log.info("handler size {} , max {}", buffer.length(), maxRecordSize);
               if (buffer.length() > maxRecordSize) {
                 log.warn("OCLC import size exceeded {}", maxRecordSize);
-                handled[0] = true;
+                socket.endHandler(x -> {});
                 socket.close();
                 return;
               }
@@ -52,10 +51,10 @@ public class MainVerticle extends EdgeVerticleCore {
                   if (j < buffer.length() && buffer.getByte(j) == '\n') {
                     if ("GET ".equals(buffer.getString(0, 4))) {
                       // close now, ignoring keep alive (which is our right!)
+                      socket.endHandler(x -> {});
                       log.debug("Got HTTP: {}", buffer.toString());
                       socket.write("HTTP/1.0 200 OK\r\n\r\n")
                           .onComplete(x -> socket.close());
-                      handled[0] = true;
                       return;
                     }
                   }
@@ -63,12 +62,10 @@ public class MainVerticle extends EdgeVerticleCore {
               }
             });
             socket.endHandler(end -> {
-              if (!handled[0]) {
-                Importer importer = new Importer();
-                importer.importRequest(buffer)
-                    .onFailure(cause -> log.warn(cause.getMessage(), cause))
-                    .onSuccess(complete -> log.info("Importing successfully"));
-              }
+              Importer importer = new Importer();
+              importer.importRequest(buffer)
+                  .onFailure(cause -> log.warn(cause.getMessage(), cause))
+                  .onSuccess(complete -> log.info("Importing successfully"));
             });
           }).listen(port).mapEmpty();
     }).onComplete(promise);
