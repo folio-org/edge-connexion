@@ -54,9 +54,8 @@ public class MainVerticle extends EdgeVerticleCore {
 
   @Override
   public void start(Promise<Void> promise) {
-    // should also inspect properties here
     LoginStrategyType loginStrategyType = LoginStrategyType.valueOf(
-        config().getString(LOGIN_STRATEGY, "key"));
+        config().getString(LOGIN_STRATEGY, System.getProperty(LOGIN_STRATEGY, "key")));
     Future.<Void>future(super::start).<Void>compose(res -> {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
