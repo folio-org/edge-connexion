@@ -25,11 +25,17 @@ public class MainVerticle extends EdgeVerticleCore {
 
   // ID of : https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json
   static final String COPYCAT_PROFILE_OCLC = "f26df83c-aa25-40b6-876e-96852c3d4fd4";
+  static final String LOGIN_STRATEGY = "login_strategy";
   private static final int MAX_RECORD_SIZE = 100000;
   private static final int DEFAULT_PORT = 8081;
   private static final Logger log = LogManager.getLogger(MainVerticle.class);
   private int maxRecordSize = MAX_RECORD_SIZE;
   int port;
+
+  enum LoginStrategyType {
+    full,
+    key,
+  }
 
   void setMaxRecordSize(int sz) {
     maxRecordSize = sz;
@@ -48,6 +54,9 @@ public class MainVerticle extends EdgeVerticleCore {
 
   @Override
   public void start(Promise<Void> promise) {
+    // should also inspect properties here
+    LoginStrategyType loginStrategyType = LoginStrategyType.valueOf(
+        config().getString(LOGIN_STRATEGY, "key"));
     Future.<Void>future(super::start).<Void>compose(res -> {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
@@ -99,7 +108,7 @@ public class MainVerticle extends EdgeVerticleCore {
             socket.endHandler(end -> {
               Importer importer = new Importer();
               importer.importRequest(buffer)
-                  .compose(x -> callCopycat(importer, webClient))
+                  .compose(x -> callCopycat(importer, webClient, loginStrategyType))
                   .onComplete(x -> {
                     if (x.failed()) {
                       log.warn(x.cause().getMessage(), x.cause());
@@ -111,17 +120,16 @@ public class MainVerticle extends EdgeVerticleCore {
     }).onComplete(promise);
   }
 
-  Future<Void> callCopycat(Importer importer, WebClient webClient) {
-    // note only a Vert.x config at this time
-    String loginStrategy = config().getString("login_strategy", "key");
+  Future<Void> callCopycat(Importer importer, WebClient webClient,
+                           LoginStrategyType loginStrategyType) {
     if (importer.getRecords().size() != 1) {
       return Future.failedFuture("One record expected in OCLC Connexion request");
     }
     Buffer record = importer.getRecords().get(0);
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
-    EdgeClient edgeClient;
-    switch (loginStrategy) {
-      case "key":
+    EdgeClient edgeClient = null;
+    switch (loginStrategyType) {
+      default: // key, but checkstyle insists about a default section!!
         // scenario 1: api key in localUser
         ClientInfo clientInfo;
         try {
@@ -139,7 +147,7 @@ public class MainVerticle extends EdgeVerticleCore {
           }
         });
         break;
-      case "full":
+      case full:
         // scenario 2: localUser 'tenant user password'  (whitespace between these)
         String[] s = importer.getLocalUser().split("\\s+");
         if (s.length != 3) {
@@ -148,8 +156,6 @@ public class MainVerticle extends EdgeVerticleCore {
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
             s[0], "0", s[1], pw -> pw.complete(s[2]));
         break;
-      default:
-        return Future.failedFuture("Bad login_strategy " + loginStrategy);
     }
     JsonObject content = new JsonObject();
     content.put("profileId", COPYCAT_PROFILE_OCLC);

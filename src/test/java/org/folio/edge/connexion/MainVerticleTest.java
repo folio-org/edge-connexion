@@ -276,19 +276,12 @@ public class MainVerticleTest {
 
   @Test
   public void testImportWithLoginStrategyUnknown(TestContext context) {
-    Async async = context.async();
-    String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
-    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
-      context.assertEquals("Bad login_strategy unknown", x.getMessage());
-      async.complete();
-    }));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "unknown"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
-        .compose(socket -> socket.close())
-        .onComplete(context.asyncAssertSuccess());
-    async.await();
+        .onComplete(context.asyncAssertFailure(x -> {
+          context.assertEquals("No enum constant org.folio.edge.connexion.MainVerticle.LoginStrategyType.unknown",
+              x.getMessage());
+        }));
   }
 
   @Test
