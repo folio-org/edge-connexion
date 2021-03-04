@@ -167,7 +167,7 @@ public class MainVerticleTest {
     }));
     deploy(mainVerticle)
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("U6MyUser").map(socket))
+        .compose(socket -> socket.write("U4User").map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -242,11 +242,12 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullOk(TestContext context) {
     Async async = context.async();
+    String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async.complete()));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20diku dikuuser abc123" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -255,18 +256,19 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullTwoOk(TestContext context) {
     Async async = context.async();
+    String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async.complete()));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20diku dikuuser abc123" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
     Async async2 = context.async();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async2.complete()));
     vertx.createNetClient().connect(PORT, "localhost")
-        .compose(socket -> socket.write("A20diku dikuuser abc123" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async2.await();
@@ -275,6 +277,7 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyUnknown(TestContext context) {
     Async async = context.async();
+    String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       context.assertEquals("Bad login_strategy unknown", x.getMessage());
@@ -282,7 +285,7 @@ public class MainVerticleTest {
     }));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "unknown"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20diku dikuuser abc123" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -291,6 +294,7 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullBadLocalFormat(TestContext context) {
     Async async = context.async();
+    String localUser = "diku dikuuser abc 23";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       context.assertEquals("Bad format of localUser", x.getMessage());
@@ -298,7 +302,7 @@ public class MainVerticleTest {
     }));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20diku dikuuser abc 23" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -307,6 +311,7 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullBadMARC(TestContext context) {
     Async async = context.async();
+    String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       context.assertEquals("/copycat/imports returned status 400", x.getMessage());
@@ -314,7 +319,7 @@ public class MainVerticleTest {
     }));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20diku dikuuser abc123" + MARC_REJECT).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_REJECT).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -323,6 +328,7 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullBadPw(TestContext context) {
     Async async = context.async();
+    String localUser = "diku dikuuser abc321";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       context.assertEquals("/authn/login returned status 400", x.getMessage());
@@ -330,7 +336,7 @@ public class MainVerticleTest {
     }));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20diku dikuuser abc321" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -339,6 +345,7 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullBadTenant(TestContext context) {
     Async async = context.async();
+    String localUser = "ukid dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       context.assertEquals("/authn/login returned status 400", x.getMessage());
@@ -346,7 +353,7 @@ public class MainVerticleTest {
     }));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> socket.write("A20ukid dikuuser abc123" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
