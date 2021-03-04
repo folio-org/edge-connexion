@@ -365,4 +365,12 @@ public class MainVerticleTest {
     async.await();
   }
 
+  @Test
+  public void testEdgeClientTokenCacheFailure(TestContext context) {
+    EdgeClient edgeClient = new EdgeClient(null, null, null, "tenant", "0", "user", null);
+    edgeClient.getToken(null).onComplete(context.asyncAssertFailure(x ->
+        context.assertEquals("Failed to access TokenCache", x.getMessage())
+      ));
+  }
+
 }

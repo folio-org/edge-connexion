@@ -38,11 +38,12 @@ public class EdgeClient {
   }
 
   Future<HttpRequest<Buffer>> getToken(HttpRequest<Buffer> request) {
-    String token = null;
+    String token;
     try {
       token = cache.get(clientId, tenant, username);
-    } catch (TokenCache.NotInitializedException e) {
-      log.warn("Failed to access TokenCache", e);
+    } catch (Exception e) {
+      log.warn("Failed to access TokenCache {}", e.getMessage(), e);
+      return Future.failedFuture("Failed to access TokenCache");
     }
     if (token != null) {
       request.putHeader("X-Okapi-Token", token);
