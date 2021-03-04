@@ -55,10 +55,9 @@ public class EdgeClient {
       payload.put("username", username);
       payload.put("password", password);
       return client.postAbs(okapiUrl + "/authn/login")
-          .putHeader("Accept", "*/*")
-          .putHeader("Content-Type", "application/json")
+          .putHeader("Accept", "*/*") // to be safe
           .putHeader("X-Okapi-Tenant", tenant)
-          .sendJsonObject(payload)
+          .sendJsonObject(payload) // also sets Content-Type to application/json
           .compose(res -> {
             if (res.statusCode() != 201) {
               log.warn("/authn/login returned status {}: {}", res.statusCode(), res.bodyAsString());

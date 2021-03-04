@@ -163,8 +163,9 @@ public class MainVerticle extends EdgeVerticleCore {
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
     HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
-        .postAbs(okapiUrl + "/copycat/imports")
-        .putHeader("Accept", "*/*");
+        .postAbs(okapiUrl + "/copycat/imports");
+    // Accept is not necessary with mod-copycat because it's based on RMB 32.2+ RMB-519
+    // Content-Type is set to application/json by sendJsonObject
     return edgeClient.getToken(bufferHttpRequest)
         .compose(request -> request.sendJsonObject(content))
         .compose(response -> {

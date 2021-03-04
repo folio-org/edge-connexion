@@ -43,11 +43,18 @@ public class MainVerticleTest {
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
     router.post("/authn/login").handler(ctx -> {
+      HttpServerRequest request = ctx.request();
+      if (!"application/json".equals(request.getHeader("Content-Type"))) {
+        ctx.response().setStatusCode(400);
+        ctx.response().putHeader("Content-Type", "text/plain");
+        ctx.response().end("Bad Request");
+        return;
+      }
       JsonObject login = ctx.getBodyAsJson();
       String username = login.getString("username");
       String password = login.getString("password");
       // only accept the diku that is in src/test/resources/ephemeral.properties
-      if ("diku".equals(ctx.request().getHeader("X-Okapi-Tenant"))
+      if ("diku".equals(request.getHeader("X-Okapi-Tenant"))
           && "dikuuser".equals(username) && "abc123".equals(password)) {
         ctx.response().setStatusCode(201);
         ctx.response().putHeader("X-Okapi-Token", "validtoken");
@@ -62,6 +69,12 @@ public class MainVerticleTest {
     });
     router.post("/copycat/imports").handler(ctx -> {
       HttpServerRequest request = ctx.request();
+      if (!"application/json".equals(request.getHeader("Content-Type"))) {
+        ctx.response().setStatusCode(400);
+        ctx.response().putHeader("Content-Type", "text/plain");
+        ctx.response().end("Bad Request");
+        return;
+      }
       if (!"validtoken".equals(request.getHeader("X-Okapi-Token"))) {
         ctx.response().setStatusCode(401);
         ctx.response().putHeader("Content-Type", "text/plain");
