@@ -61,8 +61,8 @@ public class EdgeClient {
           .sendJsonObject(payload)
           .compose(res -> {
             if (res.statusCode() != 201) {
-              log.warn("/authn/login returned {}: {}", res.statusCode(), res.bodyAsString());
-              return Future.failedFuture("/authn/login returned " + res.statusCode());
+              log.warn("/authn/login returned status {}: {}", res.statusCode(), res.bodyAsString());
+              return Future.failedFuture("/authn/login returned status " + res.statusCode());
             }
             String newToken = res.getHeader("X-Okapi-Token");
             cache.put(clientId, tenant, username, newToken);

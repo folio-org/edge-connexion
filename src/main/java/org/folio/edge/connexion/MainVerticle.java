@@ -1,9 +1,12 @@
 package org.folio.edge.connexion;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -21,7 +24,7 @@ import org.folio.edge.core.utils.ApiKeyUtils;
 public class MainVerticle extends EdgeVerticleCore {
 
   // ID of : https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json
-  private static final String COPYCAT_PROFILE_OCLC = "f26df83c-aa25-40b6-876e-96852c3d4fd4";
+  static final String COPYCAT_PROFILE_OCLC = "f26df83c-aa25-40b6-876e-96852c3d4fd4";
   private static final int MAX_RECORD_SIZE = 100000;
   private static final int DEFAULT_PORT = 8081;
   private static final Logger log = LogManager.getLogger(MainVerticle.class);
@@ -36,6 +39,12 @@ public class MainVerticle extends EdgeVerticleCore {
     return maxRecordSize;
   }
 
+  private Handler<AsyncResult<Void>> completeImportHandler;
+
+  void setCompleteHandler(Handler<AsyncResult<Void>> handler) {
+    completeImportHandler = handler;
+  }
+
   @Override
   public void start(Promise<Void> promise) {
     Future.<Void>future(super::start).<Void>compose(res -> {
@@ -46,11 +55,14 @@ public class MainVerticle extends EdgeVerticleCore {
           .setConnectTimeout(timeout);
       WebClient webClient = WebClient.create(vertx, webClientOptions);
       port = config().getInteger(Constants.SYS_PORT, DEFAULT_PORT);
+      NetServerOptions options = new NetServerOptions()
+          .setIdleTimeout(30)
+          .setIdleTimeoutUnit(TimeUnit.SECONDS);
       // start server.. three cases co consider:
       // 1: buffer overrun (too large incoming request)
       // 2: HTTP GET status for health check
       // 3: OCLC Connexion incoming request
-      return vertx.createNetServer()
+      return vertx.createNetServer(options)
           .connectHandler(socket -> {
             Buffer buffer = Buffer.buffer();
             socket.handler(chunk -> {
@@ -59,6 +71,9 @@ public class MainVerticle extends EdgeVerticleCore {
                 log.warn("OCLC import size exceeded {}", maxRecordSize);
                 socket.endHandler(x -> {});
                 socket.close();
+                if (completeImportHandler != null) {
+                  completeImportHandler.handle(Future.failedFuture("OCLC import size exceeded"));
+                }
                 return;
               }
               // Minimal HTTP to honor health status
@@ -86,8 +101,14 @@ public class MainVerticle extends EdgeVerticleCore {
               Importer importer = new Importer();
               importer.importRequest(buffer)
                   .compose(x -> callCopycat(importer, webClient))
-                  .onFailure(cause -> log.warn(cause.getMessage(), cause))
-                  .onSuccess(complete -> log.info("Importing successfully"));
+                  .onComplete(x -> {
+                    if (x.failed()) {
+                      log.warn(x.cause().getMessage(), x.cause());
+                    }
+                    if (completeImportHandler != null) {
+                      completeImportHandler.handle(x);
+                    }
+                  });
             });
           }).listen(port).mapEmpty();
     }).onComplete(promise);
@@ -140,16 +161,15 @@ public class MainVerticle extends EdgeVerticleCore {
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
     HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
-        .post("/copycat/imports")
-        .putHeader("Content-Type", "application/json")
-        .putHeader("Accept", "application/json,text/plain");
+        .postAbs(okapiUrl + "/copycat/imports")
+        .putHeader("Accept", "*/*");
     return edgeClient.getToken(bufferHttpRequest)
         .compose(request -> request.sendJsonObject(content))
         .compose(response -> {
           if (response.statusCode() != 200) {
             log.warn("POST /copycat/imports returned status {}: {}",
                 response.statusCode(), response.bodyAsString());
-            return Future.failedFuture("copycat imports returned status " + response.statusCode());
+            return Future.failedFuture("/copycat/imports returned status " + response.statusCode());
           }
           return Future.succeededFuture();
         });
