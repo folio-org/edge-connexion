@@ -94,13 +94,14 @@ public class MainVerticle extends EdgeVerticleCore {
   }
 
   Future<Void> callCopycat(Importer importer, WebClient webClient) {
+    // note only a Vert.x config at this time
     String loginStrategy = config().getString("login_strategy", "key");
-    EdgeClient edgeClient;
     if (importer.getRecords().size() != 1) {
       return Future.failedFuture("One record expected in OCLC Connexion request");
     }
     Buffer record = importer.getRecords().get(0);
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
+    EdgeClient edgeClient;
     switch (loginStrategy) {
       case "key":
         // scenario 1: api key in localUser
@@ -132,16 +133,16 @@ public class MainVerticle extends EdgeVerticleCore {
       default:
         return Future.failedFuture("Bad login_strategy " + loginStrategy);
     }
-    HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
-        .post("/copycat/imports")
-        .putHeader("Content-Type", "application/json")
-        .putHeader("Accept", "application/json,text/plain");
     JsonObject content = new JsonObject();
     content.put("profileId", COPYCAT_PROFILE_OCLC);
     content.put("record",
         new JsonObject().put("marc",
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
+    HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
+        .post("/copycat/imports")
+        .putHeader("Content-Type", "application/json")
+        .putHeader("Accept", "application/json,text/plain");
     return edgeClient.getToken(bufferHttpRequest)
         .compose(request -> request.sendJsonObject(content))
         .compose(response -> {
