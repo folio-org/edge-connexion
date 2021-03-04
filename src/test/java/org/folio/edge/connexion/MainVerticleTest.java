@@ -2,7 +2,6 @@ package org.folio.edge.connexion;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
@@ -14,6 +13,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.folio.edge.core.utils.ApiKeyUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -132,6 +132,16 @@ public class MainVerticleTest {
   }
 
   @Test
+  public void testAdminHealth2(TestContext context) {
+    WebClient webClient = WebClient.create(vertx);
+    deploy(new MainVerticle())
+        .compose(x -> webClient.get(PORT, "localhost", "/admin/health").send())
+        .onComplete(context.asyncAssertSuccess(response -> context.assertEquals(200, response.statusCode())))
+        .compose(x -> webClient.get(PORT, "localhost", "/other").send())
+        .onComplete(context.asyncAssertSuccess(response -> context.assertEquals(200, response.statusCode())));
+  }
+
+  @Test
   public void testImportTooLargeMessage(TestContext context) {
     Async async = context.async();
     MainVerticle mainVerticle = new MainVerticle();
@@ -158,6 +168,72 @@ public class MainVerticleTest {
     deploy(mainVerticle)
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("U6MyUser").map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportWithLoginStrategyKeyNoLocalUser(TestContext context) {
+    Async async = context.async();
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("access denied", x.getMessage());
+      async.complete();
+    }));
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write("U1A" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportWithLoginStrategyKeyOk(TestContext context) {
+    Async async = context.async();
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async.complete()));
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportWithLoginStrategyKeyBadPassword(TestContext context) {
+    // is listed in ephemeral.properties, but is rejected by /authn/login
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "badlib", "foo");
+    Async async = context.async();
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("/authn/login returned status 400", x.getMessage());
+      async.complete();
+    }));
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportWithLoginStrategyKeyStoreMismatch(TestContext context) {
+    // is not listed in ephemeral.properties
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "unknown", "foo");
+    Async async = context.async();
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("Error retrieving password", x.getMessage());
+      async.complete();
+    }));
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();
@@ -207,6 +283,22 @@ public class MainVerticleTest {
     deploy(mainVerticle, new JsonObject().put("login_strategy", "unknown"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("A20diku dikuuser abc123" + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportWithLoginStrategyFullBadLocalFormat(TestContext context) {
+    Async async = context.async();
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("Bad format of localUser", x.getMessage());
+      async.complete();
+    }));
+    deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write("A20diku dikuuser abc 23" + MARC_SAMPLE).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();

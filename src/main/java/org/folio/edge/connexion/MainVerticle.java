@@ -39,7 +39,8 @@ public class MainVerticle extends EdgeVerticleCore {
     return maxRecordSize;
   }
 
-  private Handler<AsyncResult<Void>> completeImportHandler;
+  // primarily for testing.. A called that is called when an import is completed
+  private Handler<AsyncResult<Void>> completeImportHandler = x -> { };
 
   void setCompleteHandler(Handler<AsyncResult<Void>> handler) {
     completeImportHandler = handler;
@@ -48,7 +49,7 @@ public class MainVerticle extends EdgeVerticleCore {
   @Override
   public void start(Promise<Void> promise) {
     Future.<Void>future(super::start).<Void>compose(res -> {
-      // one webClient per Verticle
+      // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
       WebClientOptions webClientOptions = new WebClientOptions()
           .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
@@ -71,9 +72,7 @@ public class MainVerticle extends EdgeVerticleCore {
                 log.warn("OCLC import size exceeded {}", maxRecordSize);
                 socket.endHandler(x -> {});
                 socket.close();
-                if (completeImportHandler != null) {
-                  completeImportHandler.handle(Future.failedFuture("OCLC import size exceeded"));
-                }
+                completeImportHandler.handle(Future.failedFuture("OCLC import size exceeded"));
                 return;
               }
               // Minimal HTTP to honor health status
@@ -105,9 +104,7 @@ public class MainVerticle extends EdgeVerticleCore {
                     if (x.failed()) {
                       log.warn(x.cause().getMessage(), x.cause());
                     }
-                    if (completeImportHandler != null) {
-                      completeImportHandler.handle(x);
-                    }
+                    completeImportHandler.handle(x);
                   });
             });
           }).listen(port).mapEmpty();
@@ -130,7 +127,7 @@ public class MainVerticle extends EdgeVerticleCore {
         try {
           clientInfo = ApiKeyUtils.parseApiKey(importer.getLocalUser());
         } catch (ApiKeyUtils.MalformedApiKeyException e) {
-          return Future.failedFuture("access defined");
+          return Future.failedFuture("access denied");
         }
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
             clientInfo.tenantId, clientInfo.salt, clientInfo.username, pw -> {
