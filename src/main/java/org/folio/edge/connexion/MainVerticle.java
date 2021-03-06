@@ -75,6 +75,8 @@ public class MainVerticle extends EdgeVerticleCore {
           .connectHandler(socket -> {
             Buffer buffer = Buffer.buffer();
             socket.handler(chunk -> {
+              // OCLC Connexion request is ended by either the connection being
+              // closed or if nul-byte is met
               for (int i = 0; i < chunk.length(); i++) {
                 if (chunk.getByte(i) == (byte) 0) {
                   buffer.appendBuffer(chunk, 0, i);
