@@ -79,6 +79,8 @@ public class Importer {
         case ' ':
           i++;
           break;
+        case 0: // may get trailing null bytes.. that also indicates end of request
+          return;
         default:
           i = parseMarc(buffer, i, records);
       }

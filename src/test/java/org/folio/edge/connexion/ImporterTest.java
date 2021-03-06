@@ -57,7 +57,7 @@ public class ImporterTest {
   @Test
   public void testImportFromOCLC(TestContext context) {
     Importer importer = new Importer();
-    importer.importRequest(Buffer.buffer("U5!bcdeA2fgP3hij0001012345"))
+    importer.importRequest(Buffer.buffer("U5!bcdeA2fgP3hij0001012345").appendByte((byte) 0))
         .onComplete(context.asyncAssertSuccess(res -> {
           Assert.assertEquals("!bcde", importer.getUser());
           Assert.assertEquals("fg", importer.getLocalUser());
