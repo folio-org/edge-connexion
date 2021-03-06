@@ -10,6 +10,7 @@ import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.cache.TokenCache;
+import org.folio.okapi.common.XOkapiHeaders;
 
 public class EdgeClient {
   private static final Logger log = LogManager.getLogger(EdgeClient.class);
@@ -46,7 +47,7 @@ public class EdgeClient {
       return Future.failedFuture("Failed to access TokenCache");
     }
     if (token != null) {
-      request.putHeader("X-Okapi-Token", token);
+      request.putHeader(XOkapiHeaders.TOKEN, token);
       return Future.succeededFuture(request);
     }
     Promise<String> promise = Promise.promise();
@@ -57,16 +58,16 @@ public class EdgeClient {
       payload.put("password", password);
       return client.postAbs(okapiUrl + "/authn/login")
           .putHeader("Accept", "*/*") // to be safe
-          .putHeader("X-Okapi-Tenant", tenant)
+          .putHeader(XOkapiHeaders.TENANT, tenant)
           .sendJsonObject(payload) // also sets Content-Type to application/json
           .compose(res -> {
             if (res.statusCode() != 201) {
               log.warn("/authn/login returned status {}: {}", res.statusCode(), res.bodyAsString());
               return Future.failedFuture("/authn/login returned status " + res.statusCode());
             }
-            String newToken = res.getHeader("X-Okapi-Token");
+            String newToken = res.getHeader(XOkapiHeaders.TOKEN);
             cache.put(clientId, tenant, username, newToken);
-            request.putHeader("X-Okapi-Token", newToken);
+            request.putHeader(XOkapiHeaders.TOKEN, newToken);
             return Future.succeededFuture(request);
           });
     });

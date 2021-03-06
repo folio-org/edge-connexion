@@ -14,6 +14,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.utils.ApiKeyUtils;
+import org.folio.okapi.common.XOkapiHeaders;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,10 +55,10 @@ public class MainVerticleTest {
       String username = login.getString("username");
       String password = login.getString("password");
       // only accept the diku that is in src/test/resources/ephemeral.properties
-      if ("diku".equals(request.getHeader("X-Okapi-Tenant"))
+      if ("diku".equals(request.getHeader(XOkapiHeaders.TENANT))
           && "dikuuser".equals(username) && "abc123".equals(password)) {
         ctx.response().setStatusCode(201);
-        ctx.response().putHeader("X-Okapi-Token", "validtoken");
+        ctx.response().putHeader(XOkapiHeaders.TOKEN, "validtoken");
         ctx.response().putHeader("Content-Type", "application/json");
         ctx.response().end(login.encode());
         log.info("login ok");
@@ -75,7 +76,7 @@ public class MainVerticleTest {
         ctx.response().end("Bad Request");
         return;
       }
-      if (!"validtoken".equals(request.getHeader("X-Okapi-Token"))) {
+      if (!"validtoken".equals(request.getHeader(XOkapiHeaders.TOKEN))) {
         ctx.response().setStatusCode(401);
         ctx.response().putHeader("Content-Type", "text/plain");
         ctx.response().end("Bad or missing token");
