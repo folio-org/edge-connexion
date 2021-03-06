@@ -105,9 +105,9 @@ public class MainVerticle extends EdgeVerticleCore {
               }
             });
             socket.endHandler(end -> {
-              Importer importer = new Importer();
-              importer.importRequest(buffer)
-                  .compose(x -> callCopycat(importer, webClient, loginStrategyType))
+              ConnexionRequest connexionRequest = new ConnexionRequest();
+              connexionRequest.parse(buffer)
+                  .compose(x -> callCopycat(connexionRequest, webClient, loginStrategyType))
                   .onComplete(x -> {
                     if (x.failed()) {
                       log.warn(x.cause().getMessage(), x.cause());
@@ -119,12 +119,12 @@ public class MainVerticle extends EdgeVerticleCore {
     }).onComplete(promise);
   }
 
-  Future<Void> callCopycat(Importer importer, WebClient webClient,
+  Future<Void> callCopycat(ConnexionRequest connexionRequest, WebClient webClient,
                            LoginStrategyType loginStrategyType) {
-    if (importer.getRecords().size() != 1) {
+    if (connexionRequest.getRecords().size() != 1) {
       return Future.failedFuture("One record expected in OCLC Connexion request");
     }
-    Buffer record = importer.getRecords().get(0);
+    Buffer record = connexionRequest.getRecords().get(0);
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
     EdgeClient edgeClient = null;
     switch (loginStrategyType) {
@@ -132,7 +132,7 @@ public class MainVerticle extends EdgeVerticleCore {
         // scenario 1: api key in localUser
         ClientInfo clientInfo;
         try {
-          clientInfo = ApiKeyUtils.parseApiKey(importer.getLocalUser());
+          clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser());
         } catch (ApiKeyUtils.MalformedApiKeyException e) {
           return Future.failedFuture("access denied");
         }
@@ -148,7 +148,7 @@ public class MainVerticle extends EdgeVerticleCore {
         break;
       case full:
         // scenario 2: localUser 'tenant user password'  (whitespace between these)
-        String[] s = importer.getLocalUser().split("\\s+");
+        String[] s = connexionRequest.getLocalUser().split("\\s+");
         if (s.length != 3) {
           return Future.failedFuture("Bad format of localUser");
         }
