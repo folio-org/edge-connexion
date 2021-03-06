@@ -57,7 +57,7 @@ public class ConnexionRequestTest {
   @Test
   public void testImportFromOCLC(TestContext context) {
     ConnexionRequest connexionRequest = new ConnexionRequest();
-    connexionRequest.parse(Buffer.buffer("U5!bcdeA2fgP3hij0001012345").appendByte((byte) 0))
+    connexionRequest.parse(Buffer.buffer("U5!bcdeA2fgP3hij0001012345"))
         .onComplete(context.asyncAssertSuccess(res -> {
           Assert.assertEquals("!bcde", connexionRequest.getUser());
           Assert.assertEquals("fg", connexionRequest.getLocalUser());

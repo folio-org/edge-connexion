@@ -3,6 +3,7 @@ package org.folio.edge.connexion;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -182,6 +183,38 @@ public class MainVerticleTest {
     deploy(mainVerticle)
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("U4User").map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportNullByte1(TestContext context) {
+    Async async = context.async();
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("One record expected in OCLC Connexion request", x.getMessage());
+      async.complete();
+    }));
+    deploy(mainVerticle)
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write(Buffer.buffer("U4User").appendByte((byte) 0)).map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
+  public void testImportNullByte2(TestContext context) {
+    Async async = context.async();
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("One record expected in OCLC Connexion request", x.getMessage());
+      async.complete();
+    }));
+    deploy(mainVerticle)
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write(Buffer.buffer().appendByte((byte) 0)).map(socket))
         .compose(socket -> socket.close())
         .onComplete(context.asyncAssertSuccess());
     async.await();

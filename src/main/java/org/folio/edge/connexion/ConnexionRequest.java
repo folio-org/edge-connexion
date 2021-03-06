@@ -79,9 +79,8 @@ public class ConnexionRequest {
         case ' ':
           i++;
           break;
-        case 0: // may get trailing null bytes.. that also indicates end of request
-          return;
         default:
+          log.info("byte={}", buffer.getByte(i));
           i = parseMarc(buffer, i, records);
       }
     }

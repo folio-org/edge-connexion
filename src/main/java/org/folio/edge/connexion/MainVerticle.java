@@ -75,6 +75,13 @@ public class MainVerticle extends EdgeVerticleCore {
           .connectHandler(socket -> {
             Buffer buffer = Buffer.buffer();
             socket.handler(chunk -> {
+              for (int i = 0; i < chunk.length(); i++) {
+                if (chunk.getByte(i) == (byte) 0) {
+                  buffer.appendBuffer(chunk, 0, i);
+                  socket.close();
+                  return;
+                }
+              }
               buffer.appendBuffer(chunk);
               if (buffer.length() > maxRecordSize) {
                 log.warn("OCLC import size exceeded {}", maxRecordSize);
