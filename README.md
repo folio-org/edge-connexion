@@ -44,7 +44,8 @@ This is the default - if `login_strategy` is omitted.
 * `full`: "Local user" consists of 3 tokens -  tenant, user and password -
 separated by white space.
 
-The edge-connection uses copycat interface to import the MARC record.
+The edge-connexion module uses the `copycat-imports` interface for MARC
+record importing.
 It always uses the OCLC WorldCat
 [copycat profile](https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json).
 
