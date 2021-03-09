@@ -146,12 +146,13 @@ public class MainVerticle extends EdgeVerticleCore {
           return Future.failedFuture("access denied");
         }
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            clientInfo.tenantId, clientInfo.salt, clientInfo.username, pw -> {
+            clientInfo.tenantId, clientInfo.salt, clientInfo.username, () -> {
           try {
-            pw.complete(secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
+            return Future.succeededFuture(
+                secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
           } catch (SecureStore.NotFoundException e) {
             log.error("Exception retrieving password", e);
-            pw.fail("Error retrieving password"); // do not reveal anything
+            return Future.failedFuture("Error retrieving password"); // do not reveal anything
           }
         });
         break;
@@ -162,7 +163,7 @@ public class MainVerticle extends EdgeVerticleCore {
           return Future.failedFuture("Bad format of localUser");
         }
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            s[0], "0", s[1], pw -> pw.complete(s[2]));
+            s[0], "0", s[1], () -> Future.succeededFuture(s[2]));
         break;
     }
     JsonObject content = new JsonObject();

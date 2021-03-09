@@ -1,12 +1,11 @@
 package org.folio.edge.connexion;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.cache.TokenCache;
@@ -21,17 +20,17 @@ public class EdgeClient {
   private final String okapiUrl;
   private final String tenant;
   private final String username;
-  private final Handler<Promise<String>> getPasswordHandler;
+  private final Supplier<Future<String>> getPasswordSupplier;
 
   EdgeClient(String okapiUrl, WebClient client, TokenCache cache, String tenant,
-             String clientId, String username, Handler<Promise<String>> getPasswordHandler) {
+             String clientId, String username, Supplier<Future<String>> getPasswordSupplier) {
     this.cache = cache;
     this.client = client;
     this.clientId = clientId;
     this.okapiUrl = okapiUrl;
     this.tenant = tenant;
     this.username = username;
-    this.getPasswordHandler = getPasswordHandler;
+    this.getPasswordSupplier = getPasswordSupplier;
   }
 
   WebClient getClient() {
@@ -50,9 +49,7 @@ public class EdgeClient {
       request.putHeader(XOkapiHeaders.TOKEN, token);
       return Future.succeededFuture(request);
     }
-    Promise<String> promise = Promise.promise();
-    getPasswordHandler.handle(promise);
-    return promise.future().compose(password -> {
+    return getPasswordSupplier.get().compose(password -> {
       JsonObject payload = new JsonObject();
       payload.put("username", username);
       payload.put("password", password);
