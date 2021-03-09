@@ -80,7 +80,6 @@ public class ConnexionRequest {
           i++;
           break;
         default:
-          log.info("byte={}", buffer.getByte(i));
           i = parseMarc(buffer, i, records);
       }
     }
