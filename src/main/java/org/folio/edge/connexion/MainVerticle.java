@@ -141,7 +141,7 @@ public class MainVerticle extends EdgeVerticleCore {
         // scenario 1: api key in localUser
         ClientInfo clientInfo;
         try {
-          clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser());
+          clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser().trim());
         } catch (ApiKeyUtils.MalformedApiKeyException e) {
           return Future.failedFuture("access denied");
         }

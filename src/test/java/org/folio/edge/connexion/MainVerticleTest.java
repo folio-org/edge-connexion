@@ -251,6 +251,20 @@ public class MainVerticleTest {
   }
 
   @Test
+  public void testImportWithLoginStrategyKeyOkTrim(TestContext context) {
+    Async async = context.async();
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async.complete()));
+    deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> socket.write("A" + (apiKey.length() + 4) + "  " + apiKey + "  " + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.close())
+        .onComplete(context.asyncAssertSuccess());
+    async.await();
+  }
+
+  @Test
   public void testImportWithLoginStrategyKeyBadPassword(TestContext context) {
     // is listed in ephemeral.properties, but is rejected by /authn/login
     String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "badlib", "foo");
