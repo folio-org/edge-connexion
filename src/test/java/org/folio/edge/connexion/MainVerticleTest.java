@@ -6,12 +6,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetSocket;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -139,18 +139,23 @@ public class MainVerticleTest {
   public void testAdminHealth(TestContext context) {
     WebClient webClient = WebClient.create(vertx);
     deploy(new MainVerticle())
-        .compose(x -> webClient.get(PORT, "localhost", "/admin/health").send())
-        .onComplete(context.asyncAssertSuccess(response -> context.assertEquals(200, response.statusCode())));
+        .compose(x -> webClient.get(PORT, "localhost", "/admin/health")
+            .expect(ResponsePredicate.SC_OK)
+            .send())
+        .onComplete(context.asyncAssertSuccess());
   }
 
   @Test
   public void testAdminHealth2(TestContext context) {
     WebClient webClient = WebClient.create(vertx);
     deploy(new MainVerticle())
-        .compose(x -> webClient.get(PORT, "localhost", "/admin/health").send())
-        .onComplete(context.asyncAssertSuccess(response -> context.assertEquals(200, response.statusCode())))
-        .compose(x -> webClient.get(PORT, "localhost", "/other").send())
-        .onComplete(context.asyncAssertSuccess(response -> context.assertEquals(200, response.statusCode())));
+        .compose(x -> webClient.get(PORT, "localhost", "/admin/health")
+            .expect(ResponsePredicate.SC_OK)
+            .send())
+        .compose(x -> webClient.get(PORT, "localhost", "/other")
+            .expect(ResponsePredicate.SC_OK)
+            .send())
+        .onComplete(context.asyncAssertSuccess());
   }
 
   @Test
