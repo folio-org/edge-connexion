@@ -364,4 +364,26 @@ public class MainVerticleTest {
         context.assertEquals("Failed to access TokenCache", x.getMessage())
       ));
   }
+
+  private void verifyParseLocalUserFull(String input, String expectTenant, String expectUser, String expectPassword) {
+    StringBuilder tenant = new StringBuilder();
+    StringBuilder user = new StringBuilder();
+    StringBuilder password = new StringBuilder();
+    MainVerticle.parseLocalUserFull(input, tenant, user, password);
+    Assert.assertEquals(expectTenant, tenant.toString());
+    Assert.assertEquals(expectUser, user.toString());
+    Assert.assertEquals(expectPassword, password.toString());
+  }
+
+  @Test
+  public void testParseLocalUserFull() {
+    verifyParseLocalUserFull("", "", "", "");
+    verifyParseLocalUserFull("a", "a", "", "");
+    verifyParseLocalUserFull(" b", "", "b", "");
+    verifyParseLocalUserFull("a  b", "a", "b", "");
+    verifyParseLocalUserFull("a b c", "a", "b", "c");
+    verifyParseLocalUserFull("a  b  cd e ", "a", "b", " cd e ");
+    verifyParseLocalUserFull("a\nb\n cd e\n", "a", "b", " cd e\n");
+  }
+
 }
