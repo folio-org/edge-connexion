@@ -128,6 +128,27 @@ public class MainVerticle extends EdgeVerticleCore {
     }).onComplete(promise);
   }
 
+  static void parseLocalUserFull(String localUser, StringBuilder tenant, StringBuilder user,
+                                 StringBuilder password) {
+    int i = 0;
+    while (i < localUser.length() && !Character.isWhitespace(localUser.charAt(i))) {
+      i++;
+    }
+    tenant.append(localUser, 0, i);
+    while (i < localUser.length() && Character.isWhitespace(localUser.charAt(i))) {
+      i++;
+    }
+    int j = i;
+    while (i < localUser.length() && !Character.isWhitespace(localUser.charAt(i))) {
+      i++;
+    }
+    user.append(localUser, j, i);
+    if (i < localUser.length()) {
+      i++; // only one blank between user and password
+    }
+    password.append(localUser, i, localUser.length());
+  }
+
   Future<Void> callCopycat(ConnexionRequest connexionRequest, WebClient webClient,
                            LoginStrategyType loginStrategyType) {
     if (connexionRequest.getRecords().size() != 1) {
@@ -158,30 +179,16 @@ public class MainVerticle extends EdgeVerticleCore {
         break;
       case full:
         // scenario 2: localUser 'tenant user password'  (whitespace between these)
-
-        String l = connexionRequest.getLocalUser().stripLeading();
-        int i = 0;
-        while (i < l.length() && !Character.isWhitespace(l.charAt(i))) {
-          i++;
-        }
-        final String tenant = l.substring(0, i);
-        while (i < l.length() && Character.isWhitespace(l.charAt(i))) {
-          i++;
-        }
-        int j = i;
-        while (i < l.length() && !Character.isWhitespace(l.charAt(i))) {
-          i++;
-        }
-        final String user = l.substring(j, i);
-        if (i < l.length()) {
-          i++; // only one blank between user and password
-        }
-        final String password = l.substring(i);
-        if (password.isEmpty()) {
+        StringBuilder tenant = new StringBuilder();
+        StringBuilder user = new StringBuilder();
+        StringBuilder password = new StringBuilder();
+        parseLocalUserFull(connexionRequest.getLocalUser().stripLeading(), tenant, user, password);
+        if (password.length() == 0) {
           return Future.failedFuture("Bad format of localUser");
         }
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            tenant, "0", user, () -> Future.succeededFuture(password));
+            tenant.toString(), "0", user.toString(),
+            () -> Future.succeededFuture(password.toString()));
         break;
     }
     JsonObject content = new JsonObject();
