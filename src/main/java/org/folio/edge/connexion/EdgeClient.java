@@ -56,17 +56,16 @@ public class EdgeClient {
       return client.postAbs(okapiUrl + "/authn/login")
           .putHeader("Accept", "*/*") // to be safe
           .putHeader(XOkapiHeaders.TENANT, tenant)
-          .sendJsonObject(payload) // also sets Content-Type to application/json
-          .compose(res -> {
-            if (res.statusCode() != 201) {
-              log.warn("/authn/login returned status {}: {}", res.statusCode(), res.bodyAsString());
-              return Future.failedFuture("/authn/login returned status " + res.statusCode());
-            }
-            String newToken = res.getHeader(XOkapiHeaders.TOKEN);
-            cache.put(clientId, tenant, username, newToken);
-            request.putHeader(XOkapiHeaders.TOKEN, newToken);
-            return Future.succeededFuture(request);
-          });
+          .sendJsonObject(payload); // also sets Content-Type to application/json
+    }).compose(res -> {
+      if (res.statusCode() != 201) {
+        log.warn("/authn/login returned status {}: {}", res.statusCode(), res.bodyAsString());
+        return Future.failedFuture("/authn/login returned status " + res.statusCode());
+      }
+      String newToken = res.getHeader(XOkapiHeaders.TOKEN);
+      cache.put(clientId, tenant, username, newToken);
+      request.putHeader(XOkapiHeaders.TOKEN, newToken);
+      return Future.succeededFuture(request);
     });
   }
 }
