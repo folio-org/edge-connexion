@@ -9,6 +9,10 @@
   ],
   "requires" : [
     {
+      "id" : "login",
+      "version" : "7.0"
+    },
+    {
       "id" : "copycat-imports",
       "version" : "1.0"
     },

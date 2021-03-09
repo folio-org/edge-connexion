@@ -11,9 +11,48 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 module for importing records to a FOLIO instance via
 [OCLC Connexion](https://www.oclc.org/en/connexion.html)
 
+This module is based on
+[edge-common](https://github.com/folio-org/edge-common).
+
+All the system properties mentioned
+[here](https://github.com/folio-org/edge-common#system-properties)
+are relevant with the exception of `api_key_sources`.
+
+This module starts a listener on the port `port` (8081 default) that serves
+OCLC Connexion requests as well as basic HTTP to honor a GET on
+`/admin/health`, so that productions systems can check for liveness of
+this service.
+
+A OCLC Connexion request can hold 4 pieces
+
+* User
+* Local User
+* Password
+* MARC record
+
+Only "Local User" and "MARC record" is used by edge-connexion.
+
+The form of the identity is controlled by the configuration `login_strategy`.
+Two values are supported:
+
+* `key`: "Local user" of the OCLC Connexion request is an API key.
+Presumably this API key that was originally created with
+edge-common's API key utility. In this mode the secret store of edge-common
+is used to determine the password.
+This is the default - if `login_strategy` is omitted.
+
+* `full`: "Local user" consists of 3 tokens -  tenant, user and password -
+separated by white space.
+
+The edge-connexion module uses the `copycat-imports` interface for MARC
+record importing.
+It always uses the OCLC WorldCat
+[copycat profile](https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json).
+
 ## Additional information
 
-Other FOLIO Developer documentation is at [dev.folio.org](https://dev.folio.org/)
+Other FOLIO Developer documentation is at
+[dev.folio.org](https://dev.folio.org/)
 
 ### Issue tracker
 
@@ -22,10 +61,11 @@ at the [FOLIO issue tracker](https://dev.folio.org/guidelines/issue-tracker).
 
 ### ModuleDescriptor
 
-See the built `target/ModuleDescriptor.json` for the interfaces that this module
-requires and provides, the permissions, and the additional module metadata.
+See the template [ModuleDescriptor-template.json](descriptors/ModuleDescriptor-template.json)
+for the interfaces that this module requires and provides, the permissions,
+and the additional module metadata.
 
-### Getting started
+This module does not include a launch descriptor as it is an edge module.
 
 ### Code analysis
 

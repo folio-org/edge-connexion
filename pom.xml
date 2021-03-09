@@ -57,6 +57,11 @@
       <artifactId>edge-common</artifactId>
       <version>4.0.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.folio.okapi</groupId>
+      <artifactId>okapi-common</artifactId>
+      <version>4.7.0</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>

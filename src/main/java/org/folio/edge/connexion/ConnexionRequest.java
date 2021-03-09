@@ -7,8 +7,8 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Importer {
-  private static final Logger log = LogManager.getLogger(Importer.class);
+public class ConnexionRequest {
+  private static final Logger log = LogManager.getLogger(ConnexionRequest.class);
 
   private final Buffer user = Buffer.buffer();
   private final Buffer localUser = Buffer.buffer();
@@ -61,7 +61,7 @@ public class Importer {
   /**
    * Parse request from OCLC Connexion client.
    * May throw exception for bad buffer.
-   * @param buffer OCOC Connexion buffer.
+   * @param buffer OCLC Connexion buffer.
    */
   void parseRequest(Buffer buffer) {
     int i = 0;
@@ -90,7 +90,7 @@ public class Importer {
    * @param buffer OCLC Connexion buffer.
    * @return Future failed future on bad buffer. succeeded future otherwise.
    */
-  Future<Void> importRequest(Buffer buffer) {
+  Future<Void> parse(Buffer buffer) {
     try {
       parseRequest(buffer);
     } catch (Exception e) {
@@ -99,4 +99,5 @@ public class Importer {
     }
     return Future.succeededFuture();
   }
+
 }
