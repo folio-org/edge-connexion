@@ -348,7 +348,7 @@ public class MainVerticleTest {
   @Test
   public void testImportWithLoginStrategyFullBadLocalFormat(TestContext context) {
     Async async = context.async();
-    String localUser = "diku dikuuser abc 23";
+    String localUser = "diku dikuuser";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       context.assertEquals("Bad format of localUser", x.getMessage());

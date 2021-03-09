@@ -141,7 +141,7 @@ public class MainVerticle extends EdgeVerticleCore {
         // scenario 1: api key in localUser
         ClientInfo clientInfo;
         try {
-          clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser().trim());
+          clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser().strip());
         } catch (ApiKeyUtils.MalformedApiKeyException e) {
           return Future.failedFuture("access denied");
         }
@@ -158,12 +158,30 @@ public class MainVerticle extends EdgeVerticleCore {
         break;
       case full:
         // scenario 2: localUser 'tenant user password'  (whitespace between these)
-        String[] s = connexionRequest.getLocalUser().split("\\s+");
-        if (s.length != 3) {
+
+        String l = connexionRequest.getLocalUser().stripLeading();
+        int i = 0;
+        while (i < l.length() && !Character.isWhitespace(l.charAt(i))) {
+          i++;
+        }
+        final String tenant = l.substring(0, i);
+        while (i < l.length() && Character.isWhitespace(l.charAt(i))) {
+          i++;
+        }
+        int j = i;
+        while (i < l.length() && !Character.isWhitespace(l.charAt(i))) {
+          i++;
+        }
+        final String user = l.substring(j, i);
+        if (i < l.length()) {
+          i++; // only one blank between user and password
+        }
+        final String password = l.substring(i);
+        if (password.isEmpty()) {
           return Future.failedFuture("Bad format of localUser");
         }
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            s[0], "0", s[1], () -> Future.succeededFuture(s[2]));
+            tenant, "0", user, () -> Future.succeededFuture(password));
         break;
     }
     JsonObject content = new JsonObject();
