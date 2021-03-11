@@ -3,6 +3,7 @@ package org.folio.edge.connexion;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,19 @@ public class ConnexionRequestTest {
     Assert.assertEquals("fg", connexionRequest.getLocalUser());
     Assert.assertEquals("hij", connexionRequest.getPassword());
     Assert.assertEquals("0001012345", connexionRequest.getRecords().get(0).toString());
+  }
+
+  @Test
+  public void parseRequestUTF8() {
+    ConnexionRequest connexionRequest = new ConnexionRequest();
+    String localUser = "testlib user bøf";
+    Assert.assertEquals(16, localUser.length());
+    int byteLength = localUser.getBytes(StandardCharsets.UTF_8).length;
+    Assert.assertEquals(17, byteLength);
+    connexionRequest.parseRequest(Buffer.buffer("A" + byteLength + localUser + "00007æ" + "00008123"));
+    Assert.assertEquals("testlib user bøf", connexionRequest.getLocalUser());
+    Assert.assertEquals("00007æ", connexionRequest.getRecords().get(0).toString());
+    Assert.assertEquals("00008123", connexionRequest.getRecords().get(1).toString());
   }
 
   @Test(expected = NumberFormatException.class)
