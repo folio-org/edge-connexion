@@ -74,7 +74,7 @@ Example of running the client against the edge-connexion server on port 8081:
 You an also hack you way with netcat:
 
     java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t diku -u diku_admin >key
-    echo -n "A65" >req
+    echo -n "A`wc -c <key`" >req
     cat key src/test/resources/how-to-program-a-computer.marc >>req
     nc -q1 localhost 8081 <req
 
