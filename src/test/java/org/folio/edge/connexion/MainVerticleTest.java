@@ -38,10 +38,12 @@ public class MainVerticleTest {
   private final int MOCK_PORT = 9231;
   private final String MARC_SAMPLE = "00008cgm";
   private final String MARC_REJECT = "00008rej";
+  private String expectMARC;
 
   Vertx vertx;
   @Before
   public void before(TestContext context) {
+    expectMARC = MARC_SAMPLE;
     vertx = Vertx.vertx();
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
@@ -91,10 +93,10 @@ public class MainVerticleTest {
       }
       try {
         byte[] decode = Base64.getDecoder().decode(copycatImports.getJsonObject("record").getString("marc"));
-        if (!MARC_SAMPLE.equals(new String(decode))) {
+        if (expectMARC != null && !expectMARC.equals(new String(decode))) {
           ctx.response().setStatusCode(400);
           ctx.response().putHeader("Content-Type", "text/plain");
-          ctx.response().end("Bad request");
+          ctx.response().end("Bad request (bad MARC)");
           return;
         }
       } catch (Exception e) {
@@ -391,4 +393,76 @@ public class MainVerticleTest {
     verifyParseLocalUserFull("a\nb\n cd e\n", "a", "b", " cd e\n");
   }
 
+  @Test
+  public void testClientOK(TestContext context) {
+    expectMARC = null; // mock will not check for SAMPLE_MARC
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    String [] args = { "localhost", Integer.toString(PORT),
+        apiKey, "src/test/resources/how-to-program-a-computer.marc"};
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> Client.main1(vertx, args));
+  }
+
+  @Test
+  public void testClientBadPassword(TestContext context) {
+    expectMARC = null; // mock will not check for SAMPLE_MARC
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuserx");
+    String [] args = { "localhost", Integer.toString(PORT),
+        apiKey, "src/test/resources/how-to-program-a-computer.marc"};
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure());
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> Client.main1(vertx, args));
+  }
+
+  @Test
+  public void testClientBadFilename(TestContext context) {
+    expectMARC = null; // mock will not check for SAMPLE_MARC
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    String [] args = { "localhost", Integer.toString(PORT),
+        apiKey, "src/test/resources/does-not-exist.marc"};
+    MainVerticle mainVerticle = new MainVerticle();
+    deploy(mainVerticle, new JsonObject())
+        .compose(x -> Client.main1(vertx, args)).onComplete(context.asyncAssertFailure(cause ->
+        context.assertTrue(cause.getMessage().contains("src/test/resources/does-not-exist.marc"),
+            cause.getMessage())
+    ));
+  }
+
+  @Test
+  public void testClientBadConnectionRefused(TestContext context) {
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    String [] args = { "localhost", Integer.toString(PORT),
+        apiKey, "src/test/resources/how-to-program-a-computer.marc"};
+    Client.main1(vertx, args).onComplete(context.asyncAssertFailure(cause ->
+        context.assertTrue(cause.getClass().getName().contains("ConnectException"), cause.getClass().getName())
+    ));
+  }
+
+  @Test
+  public void testClientBadNoArgs(TestContext context) {
+    String [] args = { "localhost" };
+    Client.main1(vertx, args).onComplete(context.asyncAssertFailure(cause ->
+        context.assertTrue(cause.getMessage().contains("Usage:"), cause.getMessage())
+    ));
+  }
+
+  @Test
+  public void testClientOK1(TestContext context) {
+    expectMARC = null; // mock will not check for SAMPLE_MARC
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    String [] args = { "localhost", Integer.toString(PORT),
+        apiKey, "src/test/resources/how-to-program-a-computer.marc"};
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
+    deploy(mainVerticle, new JsonObject())
+        .onComplete(x -> Client.main(args));
+  }
+
+  @Test
+  public void showArgs() {
+    Client.main(new String [] {"help"});
+  }
 }
