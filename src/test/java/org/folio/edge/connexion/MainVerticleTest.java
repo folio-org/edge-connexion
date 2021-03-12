@@ -448,4 +448,21 @@ public class MainVerticleTest {
         context.assertTrue(cause.getMessage().contains("Usage:"), cause.getMessage())
     ));
   }
+
+  @Test
+  public void testClientOK1(TestContext context) {
+    expectMARC = null; // mock will not check for SAMPLE_MARC
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    String [] args = { "localhost", Integer.toString(PORT),
+        apiKey, "src/test/resources/how-to-program-a-computer.marc"};
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
+    deploy(mainVerticle, new JsonObject())
+        .onComplete(x -> Client.main(args));
+  }
+
+  @Test
+  public void showArgs() {
+    Client.main(new String [] {"help"});
+  }
 }
