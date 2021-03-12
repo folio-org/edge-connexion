@@ -70,6 +70,13 @@ Here, filename is supposedly a MARC record. A sample record is found in
     java -cp target/edge-connexion-fat.jar org.folio.edge.connexion.Client \
        localhost 8081 ey.. src/test/resources/how-to-program-a-computer.marc
 
+You an also hack you way with netcat:
+
+    java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t diku -u diku_admin >key
+    echo -n "A65" >req
+    cat key src/test/resources/how-to-program-a-computer.marc >>req
+    nc -q1 localhost 8081 <req
+
 ## Additional information
 
 Other FOLIO Developer documentation is at
