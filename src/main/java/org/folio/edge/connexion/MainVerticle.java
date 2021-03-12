@@ -209,6 +209,7 @@ public class MainVerticle extends EdgeVerticleCore {
                 response.statusCode(), response.bodyAsString());
             return Future.failedFuture("/copycat/imports returned status " + response.statusCode());
           }
+          log.info("Record imported via copycat");
           return Future.succeededFuture();
         });
   }

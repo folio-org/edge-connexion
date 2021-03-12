@@ -49,6 +49,27 @@ record importing.
 It always uses the OCLC WorldCat
 [copycat profile](https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json).
 
+## Testing and running
+
+Figure out tenant, user and password to use.
+
+Generate a key with something like:
+
+    java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t<tenant> -u<user>
+
+Set up password in ephemeral.properties. Now run edge-connexion with
+
+    java -Dokapi_url=http://localhost:9130 -Dhttp.port=8081 \
+      -Dsecure_store_props=ephemeral.properties -jar target/edge-connexion-fat.jar
+
+You can import a test record with a test client that is bundled with the
+edge-connection fat jar. It takes 4 arguments: host, port, key and filename.
+Here, filename is supposedly a MARC record. A sample record is found in
+`src/test/resources`. Example of running the client against the edge-connexion server on port 8081:
+
+    java -cp target/edge-connexion-fat.jar org.folio.edge.connexion.Client \
+       localhost 8081 ey.. src/test/resources/how-to-program-a-computer.marc
+
 ## Additional information
 
 Other FOLIO Developer documentation is at
