@@ -27,7 +27,7 @@ public class Client {
 
   static Future<Void> main1(Vertx vertx, String [] args) {
     if (args.length != 4) {
-      return Future.failedFuture("Usage: <host> <port> <key> <marcfile");
+      return Future.failedFuture("Usage: <host> <port> <key> <marcfile>");
     }
     NetClient netClient = vertx.createNetClient();
     String localUser = args[2];
