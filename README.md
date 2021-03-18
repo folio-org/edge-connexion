@@ -55,7 +55,7 @@ Figure out tenant, user and password to use.
 
 Generate a key with something like:
 
-    java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t diku_admin -u diku
+    java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t diku -u diku_admin
 
 Set up password in `ephemeral.properties`. Now run edge-connexion with
 
