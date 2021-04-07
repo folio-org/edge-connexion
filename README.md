@@ -44,6 +44,15 @@ This is the default - if `login_strategy` is omitted.
 * `full`: "Local user" consists of 3 tokens -  tenant, user and password -
 separated by white space.
 
+Whether using the `key` configuration with an
+[institutional user](https://github.com/folio-org/edge-common#institutional-users)
+as documented in the edge-common library, or using the `full`
+configuration with a standard FOLIO user, the user must have the
+`copycat.all` permission. In addition, due to an issue in
+mod-source-record-manager
+([MODSOURMAN-432](https://issues.folio.org/browse/MODSOURMAN-432)),
+the user must have a `personal` property with at least a `lastName`.
+
 The edge-connexion module uses the `copycat-imports` interface for MARC
 record importing.
 It always uses the OCLC WorldCat
