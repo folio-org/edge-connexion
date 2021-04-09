@@ -7,6 +7,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -52,6 +53,26 @@ public class MainVerticle extends EdgeVerticleCore {
     completeImportHandler = handler;
   }
 
+  private void handleRequest(Buffer buffer, NetSocket socket, WebClient webClient,
+                             LoginStrategyType loginStrategyType) {
+    ConnexionRequest connexionRequest = new ConnexionRequest();
+    connexionRequest.parse(buffer)
+        .compose(x -> callCopycat(connexionRequest, webClient, loginStrategyType))
+        .onComplete(x -> {
+          Buffer response = Buffer.buffer();
+          if (x.failed()) {
+            response.appendString("Error: " + x.cause().getMessage() + "\n");
+            log.warn(x.cause().getMessage(), x.cause());
+          } else {
+            response.appendString("Import ok\n");
+          }
+          response.appendByte((byte) 0);
+          socket.write(response)
+              .compose(y -> socket.close())
+              .onComplete(end -> completeImportHandler.handle(x));
+        });
+  }
+
   @Override
   public void start(Promise<Void> promise) {
     LoginStrategyType loginStrategyType = LoginStrategyType.valueOf(
@@ -80,7 +101,8 @@ public class MainVerticle extends EdgeVerticleCore {
               for (int i = 0; i < chunk.length(); i++) {
                 if (chunk.getByte(i) == (byte) 0) {
                   buffer.appendBuffer(chunk, 0, i);
-                  socket.close();
+                  handleRequest(buffer, socket, webClient, loginStrategyType);
+                  socket.endHandler(x -> {});
                   return;
                 }
               }
@@ -114,15 +136,7 @@ public class MainVerticle extends EdgeVerticleCore {
               }
             });
             socket.endHandler(end -> {
-              ConnexionRequest connexionRequest = new ConnexionRequest();
-              connexionRequest.parse(buffer)
-                  .compose(x -> callCopycat(connexionRequest, webClient, loginStrategyType))
-                  .onComplete(x -> {
-                    if (x.failed()) {
-                      log.warn(x.cause().getMessage(), x.cause());
-                    }
-                    completeImportHandler.handle(x);
-                  });
+              handleRequest(buffer, socket, webClient, loginStrategyType);
             });
           }).listen(port).mapEmpty();
     }).onComplete(promise);
@@ -156,7 +170,7 @@ public class MainVerticle extends EdgeVerticleCore {
     }
     Buffer record = connexionRequest.getRecords().get(0);
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
-    EdgeClient edgeClient = null;
+    EdgeClient edgeClient;
     switch (loginStrategyType) {
       default: // key, but checkstyle insists about a default section!!
         // scenario 1: api key in localUser
