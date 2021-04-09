@@ -85,7 +85,8 @@ You an also hack you way with netcat:
     java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t diku -u diku_admin >key
     echo -n "A`wc -c <key`" >req
     cat key src/test/resources/manden.marc >>req
-    nc -q1 localhost 8081 <req
+    printf '\0' >>req
+    nc localhost 8081 <req
 
 ## Additional information
 

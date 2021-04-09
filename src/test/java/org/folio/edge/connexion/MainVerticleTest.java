@@ -228,8 +228,25 @@ public class MainVerticleTest {
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE).map(socket))
-        .compose(socket -> socket.close())
-        .onComplete(context.asyncAssertSuccess());
+        .compose(socket -> socket.close());
+  }
+
+  @Test
+  public void testImportWithLoginStrategyKeyOkWithResponse(TestContext context) {
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    MainVerticle mainVerticle = new MainVerticle();
+    Buffer response = Buffer.buffer();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> {
+      context.assertEquals("Import ok", Client.trimConnexionResponse(response.toString()));
+    }));
+    deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> {
+          socket.handler(response::appendBuffer);
+          return Future.succeededFuture(socket);
+        })
+        .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE).map(socket))
+        .compose(socket -> socket.write(Buffer.buffer(new byte[] {0})));
   }
 
   @Test
@@ -249,13 +266,19 @@ public class MainVerticleTest {
     // is listed in ephemeral.properties, but is rejected by /authn/login
     String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "badlib", "foo");
     MainVerticle mainVerticle = new MainVerticle();
-    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("/authn/login returned status 400", x.getMessage())));
+    Buffer response = Buffer.buffer();
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
+      context.assertEquals("/authn/login returned status 400", x.getMessage());
+      context.assertEquals("Error: /authn/login returned status 400", Client.trimConnexionResponse(response.toString()));
+    }));
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(socket -> {
+          socket.handler(response::appendBuffer);
+          return Future.succeededFuture(socket);
+        })
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE).map(socket))
-        .compose(socket -> socket.close())
-        .onComplete(context.asyncAssertSuccess());
+        .compose(socket -> socket.write(Buffer.buffer(new byte[] {0})).map(socket));
   }
 
   @Test
@@ -402,7 +425,8 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject())
-        .compose(x -> Client.main1(vertx, args));
+        .compose(x -> Client.main1(vertx, args))
+        .onSuccess(x -> context.assertEquals("Import ok", x));
   }
 
   @Test
@@ -414,7 +438,8 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure());
     deploy(mainVerticle, new JsonObject())
-        .compose(x -> Client.main1(vertx, args));
+        .compose(x -> Client.main1(vertx, args))
+        .onSuccess(x -> context.assertEquals("Error: Error retrieving password", x));
   }
 
   @Test
