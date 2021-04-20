@@ -54,15 +54,23 @@ public class Client {
             "A" + localUser.getBytes(StandardCharsets.UTF_8).length + localUser).map(socket))
         .compose(socket -> {
           Buffer response = Buffer.buffer();
-          socket.handler(response::appendBuffer);
-          socket.endHandler(x -> {
-            promise.complete(trimConnexionResponse(response.toString()));
+          socket.handler(chunk -> {
+            int i;
+            for (i = 0; i < chunk.length(); i++) {
+              if (chunk.getByte(i) == (byte) 0) {
+                response.appendBuffer(chunk.slice(0, i));
+                socket.close();
+                promise.complete(trimConnexionResponse(response.toString()));
+                return;
+              }
+            }
+            response.appendBuffer(chunk);
           });
           return Future.succeededFuture(socket);
         })
         .compose(socket -> socket.sendFile(args[3]).map(socket))
         .compose(socket -> socket.write("\0"))
-        .onFailure(cause -> promise.fail(cause));
+        .onFailure(promise::fail);
     return promise.future();
   }
 }

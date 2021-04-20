@@ -14,15 +14,26 @@ public class ConnexionRequest {
   private final Buffer localUser = Buffer.buffer();
   private final Buffer password = Buffer.buffer();
   private final List<Buffer> records = new LinkedList<>();
+  private Buffer buffer;
+
+  ConnexionRequest() {
+    buffer = Buffer.buffer();
+  }
 
   private static int parseValue(Buffer buffer, int i, Buffer v) {
     // two length specs
     //  1. single character specifies, where @=0, A=1, B=2, ... DEL=63 (only up to 63 in length !!)
     //  2. multiple digits, followed by value (a value may not start with a digit!!)
     i++;
-    int len = buffer.getByte(i) - 64;
-    if (len >= 0) {
-      i++; // 1: single character length, skip length itself
+    byte leadingByte = buffer.getByte(i);
+
+    int len;
+    if (leadingByte >= 64) {
+      len = leadingByte - 64;
+      i++;
+    } else if (leadingByte < 0) {
+      len = 192 + leadingByte;
+      i++;
     } else {
       // 2: digits makes up a number.
       int llen = 0;
@@ -38,6 +49,9 @@ public class ConnexionRequest {
 
   private static int parseMarc(Buffer buffer, int i, List<Buffer> records) {
     int len = Integer.parseInt(buffer.getString(i, i + 5));
+    if (buffer.length() < i + len) {
+      throw new IndexOutOfBoundsException("Incomplete marc");
+    }
     records.add(buffer.slice(i, i + len));
     return i + len;
   }
@@ -58,46 +72,41 @@ public class ConnexionRequest {
     return records;
   }
 
-  /**
-   * Parse request from OCLC Connexion client.
-   * May throw exception for bad buffer.
-   * @param buffer OCLC Connexion buffer.
-   */
-  void parseRequest(Buffer buffer) {
-    int i = 0;
-    while (i < buffer.length()) {
-      switch (buffer.getByte(i)) {
-        case 'U':
-          i = parseValue(buffer, i, user);
-          break;
-        case 'A':
-          i = parseValue(buffer, i, localUser);
-          break;
-        case 'P':
-          i = parseValue(buffer, i, password);
-          break;
-        case ' ':
-          i++;
-          break;
-        default:
-          i = parseMarc(buffer, i, records);
-      }
-    }
+  Buffer getBuffer() {
+    return buffer;
   }
 
-  /**
-   * Parse request from OCLC Connexion client.
-   * @param buffer OCLC Connexion buffer.
-   * @return Future failed future on bad buffer. succeeded future otherwise.
-   */
-  Future<Void> parse(Buffer buffer) {
-    try {
-      parseRequest(buffer);
-    } catch (Exception e) {
-      log.warn(e.getMessage(), e);
-      return Future.failedFuture(e);
+  void handle(Buffer chunk) {
+    buffer.appendBuffer(chunk);
+    int ret = feedInput(buffer);
+    buffer = buffer.getBuffer(ret, buffer.length());
+  }
+
+  int feedInput(Buffer buffer) {
+    int i = 0;
+    while (i < buffer.length()) {
+      try {
+        switch (buffer.getByte(i)) {
+          case 'U':
+            i = parseValue(buffer, i, user);
+            break;
+          case 'A':
+            i = parseValue(buffer, i, localUser);
+            break;
+          case 'P':
+            i = parseValue(buffer, i, password);
+            break;
+          case ' ':
+            i++;
+            break;
+          default:
+            i = parseMarc(buffer, i, records);
+        }
+      } catch (IndexOutOfBoundsException | NumberFormatException e) {
+        break;
+      }
     }
-    return Future.succeededFuture();
+    return i;
   }
 
 }
