@@ -22,11 +22,10 @@ public class ConnexionRequest {
 
   private static int parseValue(Buffer buffer, int i, Buffer v) {
     // two length specs
-    //  1. single character specifies, where @=0, A=1, B=2, ... DEL=63 (only up to 63 in length !!)
+    //  1. single character specifies, where @=0, A=1, B=2, ... CHR-255=191 (up to 191 in length)
     //  2. multiple digits, followed by value (a value may not start with a digit!!)
     i++;
     byte leadingByte = buffer.getByte(i);
-
     int len;
     if (leadingByte >= 64) {
       len = leadingByte - 64;
