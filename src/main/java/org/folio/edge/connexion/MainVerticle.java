@@ -53,24 +53,22 @@ public class MainVerticle extends EdgeVerticleCore {
     completeImportHandler = handler;
   }
 
-  private void handleRequest(Buffer buffer, NetSocket socket, WebClient webClient,
-                             LoginStrategyType loginStrategyType) {
-    ConnexionRequest connexionRequest = new ConnexionRequest();
-    connexionRequest.parse(buffer)
-        .compose(x -> callCopycat(connexionRequest, webClient, loginStrategyType))
-        .onComplete(x -> {
-          Buffer response = Buffer.buffer();
-          if (x.failed()) {
-            response.appendString("Error: " + x.cause().getMessage() + "\n");
-            log.warn(x.cause().getMessage(), x.cause());
-          } else {
-            response.appendString("Import ok\n");
-          }
-          response.appendByte((byte) 0);
-          socket.write(response)
-              .compose(y -> socket.close())
-              .onComplete(end -> completeImportHandler.handle(x));
-        });
+  private Future<Void> handleRequest(ConnexionRequest connexionRequest, NetSocket socket,
+                                     WebClient webClient,
+                                     LoginStrategyType loginStrategyType) {
+    return callCopycat(connexionRequest, webClient, loginStrategyType)
+        .compose(
+            x -> {
+              socket.write("Import ok\n\0");
+              log.info("handleRequest import ok");
+              return Future.succeededFuture();
+            },
+            cause -> {
+              socket.write("Error: " + cause.getMessage() + "\n\0");
+              log.info("handleRequest error {}", cause.getMessage());
+              return Future.failedFuture(cause);
+            }
+        );
   }
 
   @Override
@@ -94,19 +92,26 @@ public class MainVerticle extends EdgeVerticleCore {
       // 3: OCLC Connexion incoming request
       return vertx.createNetServer(options)
           .connectHandler(socket -> {
-            Buffer buffer = Buffer.buffer();
+            ConnexionRequest connexionRequest = new ConnexionRequest();
+            Promise<Void> connexionPromise = Promise.promise();
             socket.handler(chunk -> {
               // OCLC Connexion request is ended by either the connection being
               // closed or if nul-byte is met
-              for (int i = 0; i < chunk.length(); i++) {
+              int i;
+              for (i = 0; i < chunk.length(); i++) {
                 if (chunk.getByte(i) == (byte) 0) {
-                  buffer.appendBuffer(chunk, 0, i);
-                  handleRequest(buffer, socket, webClient, loginStrategyType);
-                  socket.endHandler(x -> {});
-                  return;
+                  break;
                 }
               }
-              buffer.appendBuffer(chunk);
+              connexionRequest.handle(chunk.slice(0, i));
+
+              if (!connexionRequest.getRecords().isEmpty()) {
+                log.info("Got {} records", connexionRequest.getRecords().size());
+                handleRequest(connexionRequest, socket, webClient, loginStrategyType)
+                    .onComplete(connexionPromise);
+              }
+
+              Buffer buffer = connexionRequest.getBuffer();
               if (buffer.length() > maxRecordSize) {
                 log.warn("OCLC import size exceeded {}", maxRecordSize);
                 socket.endHandler(x -> {});
@@ -115,7 +120,7 @@ public class MainVerticle extends EdgeVerticleCore {
                 return;
               }
               // Minimal HTTP to honor health status
-              for (int i = 0; i < buffer.length(); i++) {
+              for (i = 0; i < buffer.length(); i++) {
                 // look for LFCRLF or LFLF
                 if (buffer.getByte(i) == '\n') {
                   int j = i + 1;
@@ -136,7 +141,11 @@ public class MainVerticle extends EdgeVerticleCore {
               }
             });
             socket.endHandler(end -> {
-              handleRequest(buffer, socket, webClient, loginStrategyType);
+              Future<Void> f = connexionPromise.future();
+              if (!f.isComplete()) {
+                connexionPromise.fail("No records provided");
+              }
+              completeImportHandler.handle(f);
             });
           }).listen(port).mapEmpty();
     }).onComplete(promise);
@@ -168,7 +177,8 @@ public class MainVerticle extends EdgeVerticleCore {
     if (connexionRequest.getRecords().size() != 1) {
       return Future.failedFuture("One record expected in OCLC Connexion request");
     }
-    Buffer record = connexionRequest.getRecords().get(0);
+    final Buffer record = connexionRequest.getRecords().get(0);
+    connexionRequest.getRecords().clear();
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
     EdgeClient edgeClient;
     switch (loginStrategyType) {
