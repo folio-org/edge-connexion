@@ -41,7 +41,6 @@ public class Client {
     return s.substring(0, i);
   }
 
-
   static Future<String> main1(Vertx vertx, String [] args) {
     if (args.length != 4) {
       return Future.failedFuture("Usage: <host> <port> <key> <marcfile>");
@@ -55,21 +54,18 @@ public class Client {
         .compose(socket -> {
           Buffer response = Buffer.buffer();
           socket.handler(chunk -> {
-            int i;
-            for (i = 0; i < chunk.length(); i++) {
+            response.appendBuffer(chunk);
+            for (int i = 0; i < chunk.length(); i++) {
               if (chunk.getByte(i) == (byte) 0) {
-                response.appendBuffer(chunk.slice(0, i));
                 socket.close();
-                promise.complete(trimConnexionResponse(response.toString()));
                 return;
               }
             }
-            response.appendBuffer(chunk);
           });
+          socket.endHandler(end -> promise.complete(trimConnexionResponse(response.toString())));
           return Future.succeededFuture(socket);
         })
         .compose(socket -> socket.sendFile(args[3]).map(socket))
-        .compose(socket -> socket.write("\0"))
         .onFailure(promise::fail);
     return promise.future();
   }
