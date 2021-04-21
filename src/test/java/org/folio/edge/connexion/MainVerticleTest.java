@@ -42,6 +42,7 @@ public class MainVerticleTest {
   private String expectMARC;
 
   Vertx vertx;
+
   @Before
   public void before(TestContext context) {
     expectMARC = MARC_SAMPLE;
@@ -199,7 +200,7 @@ public class MainVerticleTest {
     deploy(mainVerticle)
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("U4User").map(socket))
-        .compose(socket -> socket.close());
+        .compose(NetSocket::close);
   }
 
   @Test
@@ -210,7 +211,7 @@ public class MainVerticleTest {
     deploy(mainVerticle)
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("U4User\0").map(socket))
-        .compose(socket -> socket.close());
+        .compose(NetSocket::close);
   }
 
   @Test
@@ -221,7 +222,7 @@ public class MainVerticleTest {
     deploy(mainVerticle)
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(socket -> socket.write("\0").map(socket))
-        .compose(socket -> socket.close());
+        .compose(NetSocket::close);
   }
 
   @Test
@@ -231,7 +232,7 @@ public class MainVerticleTest {
         context.assertEquals("access denied", x.getMessage())));
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("U1A" + MARC_SAMPLE));
   }
 
@@ -242,7 +243,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE));
   }
 
@@ -267,7 +268,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + (apiKey.length() + 4) + "  " + apiKey + "  " + MARC_SAMPLE));
   }
 
@@ -296,7 +297,7 @@ public class MainVerticleTest {
         context.assertEquals("Error retrieving password", x.getMessage())));
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE));
   }
 
@@ -307,7 +308,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
 
@@ -319,12 +320,12 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async.complete()));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
     async.await();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     vertx.createNetClient().connect(PORT, "localhost")
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
 
@@ -345,7 +346,7 @@ public class MainVerticleTest {
         context.assertEquals("Bad format of localUser", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
 
@@ -357,7 +358,7 @@ public class MainVerticleTest {
         context.assertEquals("/copycat/imports returned status 400", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_REJECT));
   }
 
@@ -369,7 +370,7 @@ public class MainVerticleTest {
         context.assertEquals("/authn/login returned status 400", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
 
@@ -381,7 +382,7 @@ public class MainVerticleTest {
         context.assertEquals("/authn/login returned status 400", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket))
+        .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
 
