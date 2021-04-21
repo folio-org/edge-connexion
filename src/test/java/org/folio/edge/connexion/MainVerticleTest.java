@@ -486,7 +486,11 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void showArgs() {
+  public void showArgs(TestContext context) {
     Client.main(new String [] {"help"});
-  }
+    Client.main1(vertx, new String [] {"help"})
+        .onComplete(context.asyncAssertFailure(x ->
+          context.assertEquals("Usage: <host> <port> <key> <marcfile>", x.getMessage())
+        ));
+    }
 }
