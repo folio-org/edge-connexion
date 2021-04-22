@@ -62,7 +62,8 @@ public class Client {
               }
             }
           });
-          socket.endHandler(end -> promise.complete(trimConnexionResponse(response.toString())));
+          // tryComplete if onFailure below has already been called.
+          socket.endHandler(end -> promise.tryComplete(trimConnexionResponse(response.toString())));
           return Future.succeededFuture(socket);
         })
         .compose(socket -> socket.sendFile(args[3]).map(socket))
