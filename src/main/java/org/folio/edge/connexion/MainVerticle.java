@@ -60,12 +60,12 @@ public class MainVerticle extends EdgeVerticleCore {
         .compose(
             x -> {
               socket.write("Import ok\n\0");
-              log.info("handleRequest import ok");
+              log.info("Import ok");
               return Future.succeededFuture();
             },
             cause -> {
               socket.write("Error: " + cause.getMessage() + "\n\0");
-              log.info("handleRequest error {}", cause.getMessage());
+              log.info("Error: {}", cause.getMessage());
               return Future.failedFuture(cause);
             }
         );
@@ -94,6 +94,7 @@ public class MainVerticle extends EdgeVerticleCore {
           .connectHandler(socket -> {
             ConnexionRequest connexionRequest = new ConnexionRequest();
             Promise<Void> connexionPromise = Promise.promise();
+            log.info("Request from {}", socket.remoteAddress().hostAddress());
             socket.handler(chunk -> {
               // OCLC Connexion request is ended by either the connection being
               // closed or if nul-byte is met
@@ -106,7 +107,6 @@ public class MainVerticle extends EdgeVerticleCore {
               connexionRequest.handle(chunk.slice(0, i));
 
               if (!connexionRequest.getRecords().isEmpty()) {
-                log.info("Got {} records", connexionRequest.getRecords().size());
                 handleRequest(connexionRequest, socket, webClient, loginStrategyType)
                     .onComplete(connexionPromise);
               }

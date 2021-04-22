@@ -69,7 +69,8 @@ Generate a key with something like:
 Set up password in `ephemeral.properties`. Now run edge-connexion with
 
     java -Dokapi_url=http://localhost:9130 -Dhttp.port=8081 \
-      -Dsecure_store_props=ephemeral.properties -jar target/edge-connexion-fat.jar
+      -Dsecure_store_props=ephemeral.properties \
+      -jar target/edge-connexion-fat.jar
 
 You can import a test record with a test client that is bundled with the
 edge-connection fat jar. It takes 4 arguments: host, port, key and filename.
@@ -78,15 +79,15 @@ Here, filename is supposedly a MARC record. A sample record is found in
 Example of running the client against the edge-connexion server on port 8081:
 
     java -cp target/edge-connexion-fat.jar org.folio.edge.connexion.Client \
-       localhost 8081 ey.. src/test/resources/manden.marc
+      localhost 8081 ey.. src/test/resources/manden.marc
 
 You an also hack you way with netcat:
 
-    java -jar ../edge-common/target/edge-common-api-key-utils.jar -g -t diku -u diku_admin >key
+    java -jar ../edge-common/target/edge-common-api-key-utils.jar \
+      -g -t diku -u diku_admin >key
     echo -n "A`wc -c <key`" >req
     cat key src/test/resources/manden.marc >>req
-    printf '\0' >>req
-    nc localhost 8081 <req
+    nc -w5 localhost 8081 <req
 
 ## Additional information
 
