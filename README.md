@@ -89,6 +89,12 @@ You an also hack you way with netcat:
     cat key src/test/resources/manden.marc >>req
     nc -w5 localhost 8081 <req
 
+Besides the Connexion protocol, the module also supports HTTP GET on
+`/admin/health`. This is useful, if you want ot check that it's alive.
+Example:
+
+    curl http://localhost:8081/admin/health
+
 ## Additional information
 
 Other FOLIO Developer documentation is at
