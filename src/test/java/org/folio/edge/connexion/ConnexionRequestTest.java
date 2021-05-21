@@ -99,7 +99,9 @@ public class ConnexionRequestTest {
       "0, 1000012345",
       "0, U19abcde",
       "0, _",
-      "0, U?abcde"
+      "0, U?abcde",
+      "2, P09876",
+      "7, P0U3abc"
   })
   public void testFeedInput(int expected, String input) {
     ConnexionRequest connexionRequest = new ConnexionRequest();

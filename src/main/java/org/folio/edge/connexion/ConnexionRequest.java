@@ -33,6 +33,9 @@ public class ConnexionRequest {
     } else if (leadingByte < 0) {
       len = 192 + leadingByte;
       i++;
+    } else if (buffer.getByte(i) == 48) {
+      len = 0;
+      i++;
     } else {
       // 2: digits makes up a number.
       int llen = 0;
