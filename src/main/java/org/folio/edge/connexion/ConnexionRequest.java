@@ -33,7 +33,7 @@ public class ConnexionRequest {
     } else if (leadingByte < 0) {
       len = 192 + leadingByte;
       i++;
-    } else if (buffer.getByte(i) == 48) {
+    } else if (leadingByte == 48) {
       len = 0;
       i++;
     } else {
