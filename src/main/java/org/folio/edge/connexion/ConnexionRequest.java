@@ -1,6 +1,5 @@
 package org.folio.edge.connexion;
 
-import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import java.util.LinkedList;
 import java.util.List;
