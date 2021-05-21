@@ -53,7 +53,7 @@ public class ConnexionRequest {
 
   private static int parseMarc(Buffer buffer, int i, List<Buffer> records) {
     int len = Integer.parseInt(buffer.getString(i, i + 5));
-    if (buffer.length() < i + len) {
+    if (i + len > buffer.length()) {
       throw new IndexOutOfBoundsException("Incomplete marc");
     }
     records.add(buffer.slice(i, i + len));
