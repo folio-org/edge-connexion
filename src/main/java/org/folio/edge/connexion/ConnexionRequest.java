@@ -45,6 +45,9 @@ public class ConnexionRequest {
       len = Integer.parseInt(buffer.getString(i, i + llen));
       i += llen;
     }
+    if (i + len > buffer.length()) {
+      throw new IndexOutOfBoundsException("incomplete value");
+    }
     v.appendBuffer(buffer, i, len);
     return i + len;
   }
