@@ -5,12 +5,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -179,7 +182,19 @@ public class MainVerticle extends EdgeVerticleCore {
     }
     final Buffer record = connexionRequest.getRecords().get(0);
     connexionRequest.getRecords().clear();
+
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
+    URL url;
+    try {
+      url = new URL(okapiUrl);
+    } catch (MalformedURLException e) {
+      return Future.failedFuture(e.getMessage());
+    }
+    if ("file".equals(url.getProtocol())) {
+      return vertx.fileSystem().open(url.getFile(),
+          new OpenOptions().setAppend(true))
+          .compose(res -> res.write(record));
+    }
     EdgeClient edgeClient;
     switch (loginStrategyType) {
       default: // key, but checkstyle insists about a default section!!
