@@ -1,3 +1,12 @@
+## 1.0.2 2021-05-22
+
+Fixes for network communication with web based OCLC Connexion client
+(version 1.0.1 fixed issues for communication with the Windows based
+client).
+
+ * [EDGCONX-11](https://issues.folio.org/browse/EDGCONX-11) Fix fail to export from OCLC Connexion browser client
+ * Fix 'Result is already complete' in test Client
+
 ## 1.0.1 2021-04-22
 
 Fixes for communication between OCLC Connexion client and edge-connexion. JIRA issues:
