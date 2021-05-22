@@ -1,6 +1,5 @@
 package org.folio.edge.connexion;
 
-import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,6 +32,9 @@ public class ConnexionRequest {
     } else if (leadingByte < 0) {
       len = 192 + leadingByte;
       i++;
+    } else if (leadingByte == 48) {
+      len = 0;
+      i++;
     } else {
       // 2: digits makes up a number.
       int llen = 0;
@@ -42,13 +44,16 @@ public class ConnexionRequest {
       len = Integer.parseInt(buffer.getString(i, i + llen));
       i += llen;
     }
+    if (i + len > buffer.length()) {
+      throw new IndexOutOfBoundsException("incomplete value");
+    }
     v.appendBuffer(buffer, i, len);
     return i + len;
   }
 
   private static int parseMarc(Buffer buffer, int i, List<Buffer> records) {
     int len = Integer.parseInt(buffer.getString(i, i + 5));
-    if (buffer.length() < i + len) {
+    if (i + len > buffer.length()) {
       throw new IndexOutOfBoundsException("Incomplete marc");
     }
     records.add(buffer.slice(i, i + len));
