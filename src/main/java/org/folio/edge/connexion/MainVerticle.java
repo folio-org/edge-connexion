@@ -66,7 +66,7 @@ public class MainVerticle extends EdgeVerticleCore {
             },
             cause -> {
               socket.write("Error: " + cause.getMessage() + "\n\0");
-              log.info("Error: {}", cause.getMessage());
+              log.error("{}", cause.getMessage());
               return Future.failedFuture(cause);
             }
         );
