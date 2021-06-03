@@ -56,6 +56,7 @@ public class MainVerticle extends EdgeVerticleCore {
   private Future<Void> handleRequest(ConnexionRequest connexionRequest, NetSocket socket,
                                      WebClient webClient,
                                      LoginStrategyType loginStrategyType) {
+    log.info("Import from {}", socket.remoteAddress().hostAddress());
     return callCopycat(connexionRequest, webClient, loginStrategyType)
         .compose(
             x -> {
