@@ -94,7 +94,7 @@ public class MainVerticle extends EdgeVerticleCore {
           .connectHandler(socket -> {
             ConnexionRequest connexionRequest = new ConnexionRequest();
             Promise<Void> connexionPromise = Promise.promise();
-            log.info("Request from {}", socket.remoteAddress().hostAddress());
+            log.debug("Request from {}", socket.remoteAddress().hostAddress());
             socket.handler(chunk -> {
               // OCLC Connexion request is ended by either the connection being
               // closed or if nul-byte is met
