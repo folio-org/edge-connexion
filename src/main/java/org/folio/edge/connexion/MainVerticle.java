@@ -56,6 +56,7 @@ public class MainVerticle extends EdgeVerticleCore {
   private Future<Void> handleRequest(ConnexionRequest connexionRequest, NetSocket socket,
                                      WebClient webClient,
                                      LoginStrategyType loginStrategyType) {
+    log.info("Import from {}", socket.remoteAddress().hostAddress());
     return callCopycat(connexionRequest, webClient, loginStrategyType)
         .compose(
             x -> {
@@ -65,7 +66,7 @@ public class MainVerticle extends EdgeVerticleCore {
             },
             cause -> {
               socket.write("Error: " + cause.getMessage() + "\n\0");
-              log.info("Error: {}", cause.getMessage());
+              log.error("{}", cause.getMessage());
               return Future.failedFuture(cause);
             }
         );
@@ -94,7 +95,7 @@ public class MainVerticle extends EdgeVerticleCore {
           .connectHandler(socket -> {
             ConnexionRequest connexionRequest = new ConnexionRequest();
             Promise<Void> connexionPromise = Promise.promise();
-            log.info("Request from {}", socket.remoteAddress().hostAddress());
+            log.debug("Request from {}", socket.remoteAddress().hostAddress());
             socket.handler(chunk -> {
               // OCLC Connexion request is ended by either the connection being
               // closed or if nul-byte is met
