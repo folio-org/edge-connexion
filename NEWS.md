@@ -1,3 +1,9 @@
+## 1.0.3 2021-12-14
+
+Fixes:
+ 
+ * [EDGCONX-14](https://issues.folio.org/browse/EDGCONX-14) EDGCONX-14 Upgrade to edge-common 4.2.1 (for log4j 2.16.0).
+
 ## 1.0.2 2021-05-22
 
 Fixes for network communication with web based OCLC Connexion client
