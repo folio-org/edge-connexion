@@ -11,6 +11,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -222,17 +223,12 @@ public class MainVerticle extends EdgeVerticleCore {
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
     HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
-        .postAbs(okapiUrl + "/copycat/imports");
+        .postAbs(okapiUrl + "/copycat/imports").expect(ResponsePredicate.SC_OK);
     // Accept is not necessary with mod-copycat because it's based on RMB 32.2+ RMB-519
     // Content-Type is set to application/json by sendJsonObject
     return edgeClient.getToken(bufferHttpRequest)
         .compose(request -> request.sendJsonObject(content))
         .compose(response -> {
-          if (response.statusCode() != 200) {
-            log.warn("POST /copycat/imports returned status {}: {}",
-                response.statusCode(), response.bodyAsString());
-            return Future.failedFuture("/copycat/imports returned status " + response.statusCode());
-          }
           log.info("Record imported via copycat");
           return Future.succeededFuture();
         });
