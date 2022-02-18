@@ -1,3 +1,7 @@
+## 1.0.5 2022-02-18
+
+ * [EDGCONX-24](https://issues.folio.org/browse/EDGCONX-24) Upgrade to edge-common 4.2.3 (for log4j 2.17.1) and Vert.x 4.2.4.
+
 ## 1.0.4 2021-12-22
 
  * [EDGCONX-21](https://issues.folio.org/browse/EDGCONX-21) Upgrade to edge-common 4.2.2 (for log4j 2.17.0).
