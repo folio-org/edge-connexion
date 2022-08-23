@@ -36,7 +36,7 @@ For the purposes of this form, "store" includes the following:
 - [x] IP address
 - [ ] Geolocation data
 - [ ] Financial information
-- [x] Logic or algorithms used to build a user/profile
+- [ ] Logic or algorithms used to build a user/profile
 - [ ] User search queries
 <!--- - [ ] Other personal data - Please list as needed -->
 <!--- - [ ] Other personal data - Please list as needed -->
