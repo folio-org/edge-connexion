@@ -191,6 +191,7 @@ public class MainVerticle extends EdgeVerticleCore {
         } catch (ApiKeyUtils.MalformedApiKeyException e) {
           return Future.failedFuture("access denied");
         }
+        log.info("Login strategy {} and using tenant {}", loginStrategyType, clientInfo.tenantId);
         edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
             clientInfo.tenantId, clientInfo.salt, clientInfo.username, () -> {
           try {
@@ -207,6 +208,7 @@ public class MainVerticle extends EdgeVerticleCore {
         StringBuilder tenant = new StringBuilder();
         StringBuilder user = new StringBuilder();
         StringBuilder password = new StringBuilder();
+        log.info("Login strategy {} and using tenant {}", loginStrategyType, tenant);
         parseLocalUserFull(connexionRequest.getLocalUser().stripLeading(), tenant, user, password);
         if (password.length() == 0) {
           return Future.failedFuture("Bad format of localUser");
