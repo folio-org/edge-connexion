@@ -8,7 +8,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
@@ -225,15 +224,17 @@ public class MainVerticle extends EdgeVerticleCore {
         new JsonObject().put("marc",
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
-    HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
-        .postAbs(okapiUrl + "/copycat/imports").expect(ResponsePredicate.SC_OK);
     // Accept is not necessary with mod-copycat because it's based on RMB 32.2+ RMB-519
     // Content-Type is set to application/json by sendJsonObject
-    return edgeClient.getToken(bufferHttpRequest)
+    return edgeClient.getToken(webClient
+            .postAbs(okapiUrl + "/copycat/imports")
+            .expect(ResponsePredicate.SC_OK)
+        )
         .compose(request -> request.sendJsonObject(content))
         .compose(response -> {
           log.info("Record imported via copycat");
           return Future.succeededFuture();
         });
   }
+
 }
