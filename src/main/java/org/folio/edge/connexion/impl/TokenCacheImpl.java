@@ -31,7 +31,7 @@ public class TokenCacheImpl implements TokenCache {
   @Override
   public String get(String tenant, String user) {
     CacheValue c = entries.get(key(tenant, user));
-    return c != null ? c.value : null;
+    return c == null || c.expired() ? null : c.value;
   }
 
   @Override
