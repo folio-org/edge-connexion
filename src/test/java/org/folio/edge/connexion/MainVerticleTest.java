@@ -49,6 +49,7 @@ public class MainVerticleTest {
     vertx = Vertx.vertx();
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
+    // TODO /authn/login-with-expiry
     router.post("/authn/login").handler(ctx -> {
       HttpServerRequest request = ctx.request();
       if (!"application/json".equals(request.getHeader("Content-Type"))) {
@@ -388,7 +389,7 @@ public class MainVerticleTest {
 
   @Test
   public void testEdgeClientTokenCacheFailure(TestContext context) {
-    EdgeClient edgeClient = new EdgeClient(null, null, null, "tenant", "0", "user", null);
+    EdgeClient edgeClient = new EdgeClient(null, null, null, "tenant", "user", null);
     edgeClient.getToken(null).onComplete(context.asyncAssertFailure(x ->
         context.assertEquals("Failed to access TokenCache", x.getMessage())
       ));

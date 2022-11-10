@@ -11,7 +11,6 @@ import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.folio.edge.core.cache.TokenCache;
 import org.folio.okapi.common.XOkapiHeaders;
 
 public class EdgeClient {
@@ -19,7 +18,6 @@ public class EdgeClient {
 
   private final TokenCache cache;
   private final WebClient client;
-  private final String clientId;
   private final String okapiUrl;
   private final String tenant;
   private final String username;
@@ -27,10 +25,9 @@ public class EdgeClient {
   private final boolean expiry;
 
   EdgeClient(String okapiUrl, WebClient client, TokenCache cache, String tenant,
-             String clientId, String username, Supplier<Future<String>> getPasswordSupplier) {
+             String username, Supplier<Future<String>> getPasswordSupplier) {
     this.cache = cache;
     this.client = client;
-    this.clientId = clientId;
     this.okapiUrl = okapiUrl;
     this.tenant = tenant;
     this.username = username;
@@ -41,24 +38,13 @@ public class EdgeClient {
   Future<HttpRequest<Buffer>> getToken(HttpRequest<Buffer> request) {
     String cacheValue;
     try {
-      // for this to work the TTL of the TokenCache must be less than that of
-      // access token from mod-authtoken -Dtoken_cache_ttl_ms=x where
-      // x is less than 600000 (10 minutes).
-      // cache.put not saving unless expired.
-      cacheValue = cache.get(clientId, tenant, username);
+      cacheValue = cache.get(tenant, username);
     } catch (Exception e) {
       log.warn("Failed to access TokenCache {}", e.getMessage(), e);
       return Future.failedFuture("Failed to access TokenCache");
     }
     if (cacheValue != null) {
-      if (!expiry) {
-        request.putHeader(XOkapiHeaders.TOKEN, cacheValue);
-        return Future.succeededFuture(request);
-      }
-      JsonObject cacheObj = new JsonObject(cacheValue);
-      // TODO use COOKIE_ACCESS_TOKEN from Okapi (not released yet)
-      Cookie cookie = ClientCookieDecoder.STRICT.decode(cacheObj.getString("folioAccessToken"));
-      request.putHeader(XOkapiHeaders.TOKEN, cookie.value());
+      request.putHeader(XOkapiHeaders.TOKEN, cacheValue);
       return Future.succeededFuture(request);
     }
     final String loginPath = expiry ? "/authn/login-with-expiry" : "/authn/login";
@@ -74,23 +60,22 @@ public class EdgeClient {
     }).map(res -> {
       if (!expiry) {
         String newToken = res.getHeader(XOkapiHeaders.TOKEN);
-        cache.put(clientId, tenant, username, newToken);
+        cache.put(tenant, username, newToken, System.currentTimeMillis() + 604800000L); // 1 week
         request.putHeader(XOkapiHeaders.TOKEN, newToken);
         return request;
       }
-      JsonObject cacheObj = res.bodyAsJsonObject();
       res.headers().forEach(n -> {
         if ("Set-Cookie".equals(n.getKey())) {
           Cookie cookie = ClientCookieDecoder.STRICT.decode(n.getValue());
           // TODO use COOKIE_ACCESS_TOKEN from Okapi (not released yet)
           if ("folioAccessToken".equals(cookie.name())) {
-            cacheObj.put(cookie.name(), n.getValue());
             request.putHeader(XOkapiHeaders.TOKEN, cookie.value());
+            // 1 minute less than max-age
+            long expire = System.currentTimeMillis() + cookie.maxAge() * 1000 - 60000;
+            cache.put(tenant, username, cookie.value(), expire);
           }
         }
       });
-      // Not really 'put' if not-expired!
-      cache.put(clientId, tenant, username, cacheObj.encode());
       return request;
     });
   }

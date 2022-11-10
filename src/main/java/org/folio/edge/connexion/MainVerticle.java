@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.Constants;
 import org.folio.edge.core.EdgeVerticleCore;
-import org.folio.edge.core.cache.TokenCache;
 import org.folio.edge.core.model.ClientInfo;
 import org.folio.edge.core.security.SecureStore;
 import org.folio.edge.core.utils.ApiKeyUtils;
@@ -31,6 +30,8 @@ public class MainVerticle extends EdgeVerticleCore {
   private static final int DEFAULT_PORT = 8081;
   private static final Logger log = LogManager.getLogger(MainVerticle.class);
   private int maxRecordSize = MAX_RECORD_SIZE;
+
+  private TokenCache tokenCache = TokenCache.create(100);
   int port;
 
   enum LoginStrategyType {
@@ -192,8 +193,8 @@ public class MainVerticle extends EdgeVerticleCore {
           return Future.failedFuture("access denied");
         }
         log.info("Login strategy {} and using tenant {}", loginStrategyType, clientInfo.tenantId);
-        edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            clientInfo.tenantId, clientInfo.salt, clientInfo.username, () -> {
+        edgeClient = new EdgeClient(okapiUrl, webClient, tokenCache,
+            clientInfo.tenantId, clientInfo.username, () -> {
           try {
             return Future.succeededFuture(
                 secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
@@ -213,8 +214,8 @@ public class MainVerticle extends EdgeVerticleCore {
         if (password.length() == 0) {
           return Future.failedFuture("Bad format of localUser");
         }
-        edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            tenant.toString(), "0", user.toString(),
+        edgeClient = new EdgeClient(okapiUrl, webClient, tokenCache,
+            tenant.toString(), user.toString(),
             () -> Future.succeededFuture(password.toString()));
         break;
     }
