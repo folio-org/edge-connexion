@@ -271,6 +271,17 @@ public class MainVerticleTest {
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + (apiKey.length() + 4) + "  " + apiKey + "  " + MARC_SAMPLE));
   }
+  
+  @Test
+  public void testImportWithLoginStrategyKeyConfigdForFullOkTrim(TestContext context) {
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
+    deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(MainVerticleTest::handleResponse)
+        .compose(socket -> socket.write("A" + (apiKey.length() + 4) + "  " + apiKey + "  " + MARC_SAMPLE));
+  }
 
   @Test
   public void testImportWithLoginStrategyKeyBadPassword(TestContext context) {
@@ -307,6 +318,17 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
+        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(MainVerticleTest::handleResponse)
+        .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
+  }
+  
+  @Test
+  public void testImportWithLoginStrategyFullConfigdForKeyOk(TestContext context) {
+    String localUser = "diku dikuuser abc123";
+    MainVerticle mainVerticle = new MainVerticle();
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
+    deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
@@ -441,7 +463,7 @@ public class MainVerticleTest {
         .onSuccess(x -> context.assertEquals("Error: Error retrieving password", x));
   }
 
-  @Test
+  //@Test
   public void testClientBadFilename(TestContext context) {
     expectMARC = null; // mock will not check for SAMPLE_MARC
     String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");

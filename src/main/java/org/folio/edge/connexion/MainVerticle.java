@@ -181,6 +181,12 @@ public class MainVerticle extends EdgeVerticleCore {
     }
     final Buffer record = connexionRequest.getRecords().get(0);
     connexionRequest.getRecords().clear();
+    if (connexionRequest.getLocalUser() != null && connexionRequest.getLocalUser().trim()
+        .contains(" ")) {
+      loginStrategyType = LoginStrategyType.valueOf("full");
+    } else {
+      loginStrategyType = LoginStrategyType.valueOf("key");
+    }
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
     EdgeClient edgeClient;
     switch (loginStrategyType) {
