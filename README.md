@@ -68,7 +68,7 @@ Generate a key with something like:
 
 Set up password in `ephemeral.properties`. Now run edge-connexion with
 
-    java -Dokapi_url=http://localhost:9130 -Dhttp.port=8081 \
+    java -Dokapi_url=http://localhost:9130 -Dport=8081 \
       -Dsecure_store_props=ephemeral.properties \
       -jar target/edge-connexion-fat.jar
 
