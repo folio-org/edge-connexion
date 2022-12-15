@@ -14,11 +14,11 @@
     },
     {
       "id" : "copycat-imports",
-      "version" : "1.0"
+      "version" : "1.0 2.0"
     },
     {
       "id" : "copycat-profiles",
-      "version" : "1.0"
+      "version" : "2.0"
     }
   ],
   "permissionSets" : [ ]
