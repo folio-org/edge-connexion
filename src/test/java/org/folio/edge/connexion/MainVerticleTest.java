@@ -280,7 +280,7 @@ public class MainVerticleTest {
     Buffer response = Buffer.buffer();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       // context.assertEquals("/authn/login returned status 400", x.getMessage());
-      context.assertEquals("Error: Response status code 400 is not equal to 201", Client.trimConnexionResponse(response.toString()));
+      context.assertEquals("Error: POST /authn/login returned status 400: Bad Request", Client.trimConnexionResponse(response.toString()));
     }));
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
@@ -367,7 +367,7 @@ public class MainVerticleTest {
     String localUser = "diku dikuuser abc321";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("Response status code 400 is not equal to 201", x.getMessage())));
+        context.assertEquals("POST /authn/login returned status 400: Bad Request", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
@@ -379,19 +379,11 @@ public class MainVerticleTest {
     String localUser = "ukid dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("Response status code 400 is not equal to 201", x.getMessage())));
+        context.assertEquals("POST /authn/login returned status 400: Bad Request", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
-  }
-
-  @Test
-  public void testEdgeClientTokenCacheFailure(TestContext context) {
-    EdgeClient edgeClient = new EdgeClient(null, null, null, "tenant", "0", "user", null);
-    edgeClient.getToken(null).onComplete(context.asyncAssertFailure(x ->
-        context.assertEquals("Failed to access TokenCache", x.getMessage())
-      ));
   }
 
   private void verifyParseLocalUserFull(String input, String expectTenant, String expectUser, String expectPassword) {

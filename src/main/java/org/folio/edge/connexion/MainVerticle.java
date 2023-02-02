@@ -18,10 +18,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.Constants;
 import org.folio.edge.core.EdgeVerticleCore;
-import org.folio.edge.core.cache.TokenCache;
 import org.folio.edge.core.model.ClientInfo;
 import org.folio.edge.core.security.SecureStore;
 import org.folio.edge.core.utils.ApiKeyUtils;
+import org.folio.okapi.common.refreshtoken.client.Client;
+import org.folio.okapi.common.refreshtoken.client.ClientOptions;
+import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
 
 public class MainVerticle extends EdgeVerticleCore {
 
@@ -31,6 +33,7 @@ public class MainVerticle extends EdgeVerticleCore {
   private static final int MAX_RECORD_SIZE = 100000;
   private static final int DEFAULT_PORT = 8081;
   private static final Logger log = LogManager.getLogger(MainVerticle.class);
+  private final TenantUserCache tenantUserCache = new TenantUserCache(100);
   private int maxRecordSize = MAX_RECORD_SIZE;
   int port;
 
@@ -182,7 +185,9 @@ public class MainVerticle extends EdgeVerticleCore {
     final Buffer record = connexionRequest.getRecords().get(0);
     connexionRequest.getRecords().clear();
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
-    EdgeClient edgeClient;
+    ClientOptions clientOptions = new ClientOptions().webClient(webClient).okapiUrl(okapiUrl);
+    org.folio.okapi.common.refreshtoken.client.Client client;
+
     switch (loginStrategyType) {
       default: // key, but checkstyle insists about a default section!!
         // scenario 1: api key in localUser
@@ -193,16 +198,16 @@ public class MainVerticle extends EdgeVerticleCore {
           return Future.failedFuture("access denied");
         }
         log.info("Login strategy {} and using tenant {}", loginStrategyType, clientInfo.tenantId);
-        edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            clientInfo.tenantId, clientInfo.salt, clientInfo.username, () -> {
-          try {
-            return Future.succeededFuture(
-                secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
-          } catch (SecureStore.NotFoundException e) {
-            log.error("Exception retrieving password", e);
-            return Future.failedFuture("Error retrieving password"); // do not reveal anything
-          }
-        });
+        client = Client.createLoginClient(clientOptions, tenantUserCache,
+            clientInfo.tenantId, clientInfo.username, () -> {
+              try {
+                return Future.succeededFuture(
+                    secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
+              } catch (SecureStore.NotFoundException e) {
+                log.error("Exception retrieving password", e);
+                return Future.failedFuture("Error retrieving password"); // do not reveal anything
+              }
+            });
         break;
       case full:
         // scenario 2: localUser 'tenant user password'  (whitespace between these)
@@ -214,9 +219,8 @@ public class MainVerticle extends EdgeVerticleCore {
         if (password.length() == 0) {
           return Future.failedFuture("Bad format of localUser");
         }
-        edgeClient = new EdgeClient(okapiUrl, webClient, TokenCache.getInstance(),
-            tenant.toString(), "0", user.toString(),
-            () -> Future.succeededFuture(password.toString()));
+        client = Client.createLoginClient(clientOptions, tenantUserCache, tenant.toString(),
+            user.toString(), () -> Future.succeededFuture(password.toString()));
         break;
     }
     JsonObject content = new JsonObject();
@@ -225,11 +229,12 @@ public class MainVerticle extends EdgeVerticleCore {
         new JsonObject().put("marc",
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
-    HttpRequest<Buffer> bufferHttpRequest = edgeClient.getClient()
+    HttpRequest<Buffer> bufferHttpRequest = webClient
         .postAbs(okapiUrl + "/copycat/imports").expect(ResponsePredicate.SC_OK);
+
     // Accept is not necessary with mod-copycat because it's based on RMB 32.2+ RMB-519
     // Content-Type is set to application/json by sendJsonObject
-    return edgeClient.getToken(bufferHttpRequest)
+    return client.getToken(bufferHttpRequest)
         .compose(request -> request.sendJsonObject(content))
         .compose(response -> {
           log.info("Record imported via copycat");
