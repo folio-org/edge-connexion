@@ -60,7 +60,7 @@
     <dependency>
       <groupId>org.folio.okapi</groupId>
       <artifactId>okapi-common</artifactId>
-      <version>4.14.3</version>
+      <version>4.14.10</version>
     </dependency>
 
     <!-- Test dependencies -->
