@@ -280,7 +280,7 @@ public class MainVerticleTest {
     Buffer response = Buffer.buffer();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       // context.assertEquals("/authn/login returned status 400", x.getMessage());
-      context.assertEquals("Error: /authn/login returned status 400", Client.trimConnexionResponse(response.toString()));
+      context.assertEquals("Error: Response status code 400 is not equal to 201", Client.trimConnexionResponse(response.toString()));
     }));
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
@@ -355,7 +355,7 @@ public class MainVerticleTest {
     String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("/copycat/imports returned status 400", x.getMessage())));
+        context.assertEquals("Response status code 400 is not equal to 200", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
@@ -367,7 +367,7 @@ public class MainVerticleTest {
     String localUser = "diku dikuuser abc321";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("/authn/login returned status 400", x.getMessage())));
+        context.assertEquals("Response status code 400 is not equal to 201", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
@@ -379,7 +379,7 @@ public class MainVerticleTest {
     String localUser = "ukid dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("/authn/login returned status 400", x.getMessage())));
+        context.assertEquals("Response status code 400 is not equal to 201", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)

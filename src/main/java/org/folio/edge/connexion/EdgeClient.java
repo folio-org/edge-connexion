@@ -5,6 +5,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,14 +55,11 @@ public class EdgeClient {
       payload.put("username", username);
       payload.put("password", password);
       return client.postAbs(okapiUrl + "/authn/login")
+          .expect(ResponsePredicate.SC_CREATED)
           .putHeader("Accept", "*/*") // to be safe
           .putHeader(XOkapiHeaders.TENANT, tenant)
           .sendJsonObject(payload); // also sets Content-Type to application/json
     }).compose(res -> {
-      if (res.statusCode() != 201) {
-        log.warn("/authn/login returned status {}: {}", res.statusCode(), res.bodyAsString());
-        return Future.failedFuture("/authn/login returned status " + res.statusCode());
-      }
       String newToken = res.getHeader(XOkapiHeaders.TOKEN);
       cache.put(clientId, tenant, username, newToken);
       request.putHeader(XOkapiHeaders.TOKEN, newToken);

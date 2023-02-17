@@ -1,3 +1,7 @@
+## 1.0.6 2023-02-16
+
+ * [EDGCONX-31](https://issues.folio.org/browse/EDGCONX-31) Upgrade to Vert.x 4.3.8, okapi 4.14.10, edge-common 4.4.2
+
 ## 1.0.5 2022-02-18
 
  * [EDGCONX-24](https://issues.folio.org/browse/EDGCONX-24) Upgrade to edge-common 4.2.3 (for log4j 2.17.1) and Vert.x 4.2.4.
