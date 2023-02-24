@@ -40,6 +40,7 @@ public class MainVerticle extends EdgeVerticleCore {
   enum LoginStrategyType {
     full,
     key,
+    both
   }
 
   void setMaxRecordSize(int sz) {
@@ -187,6 +188,15 @@ public class MainVerticle extends EdgeVerticleCore {
     String okapiUrl = config().getString(Constants.SYS_OKAPI_URL);
     ClientOptions clientOptions = new ClientOptions().webClient(webClient).okapiUrl(okapiUrl);
     org.folio.okapi.common.refreshtoken.client.Client client;
+    
+    if (loginStrategyType == LoginStrategyType.both) {
+      if (connexionRequest.getLocalUser() != null && connexionRequest.getLocalUser().strip()
+           .contains(" ")) {
+        loginStrategyType = LoginStrategyType.valueOf("full");
+      } else {
+        loginStrategyType = LoginStrategyType.valueOf("key");
+      }
+    }
 
     switch (loginStrategyType) {
       default: // key, but checkstyle insists about a default section!!
