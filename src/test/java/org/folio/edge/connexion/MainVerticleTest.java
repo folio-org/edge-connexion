@@ -455,7 +455,7 @@ public class MainVerticleTest {
         .onSuccess(x -> context.assertEquals("Error: Error retrieving password", x));
   }
 
-  //@Test
+  @Test
   public void testClientBadFilename(TestContext context) {
     expectMARC = null; // mock will not check for SAMPLE_MARC
     String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
