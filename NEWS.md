@@ -1,3 +1,8 @@
+## 1.2.0 2024-03-21
+
+* [EDGCONX-41](https://issues.folio.org/browse/EDGCONX-41) Upgrade Vert.x to 4.5.3, edge-common to 4.6.0.
+* [EDGCONX-37](https://issues.folio.org/browse/EDGCONX-41) Vert.x 4.4.6, log4j 2.20.0, jackson 2.15.0, Netty 4.1.100
+
 ## 1.1.0 2023-10-11
 
 * [EDGCONX-34](https://issues.folio.org/browse/EDGCONX-34) Upgrade to Java 17.
