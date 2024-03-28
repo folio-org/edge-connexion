@@ -33,7 +33,7 @@ A OCLC Connexion request can hold 4 pieces
 Only "Local User" and "MARC record" is used by edge-connexion.
 
 The form of the identity is controlled by the configuration `login_strategy`.
-Two values are supported:
+Three values are supported:
 
 * `key`: "Local user" of the OCLC Connexion request is an API key.
 Presumably this API key that was originally created with
@@ -43,6 +43,9 @@ This is the default - if `login_strategy` is omitted.
 
 * `full`: "Local user" consists of 3 tokens -  tenant, user and password -
 separated by white space.
+
+* `both`: When configured using "both" the service will accept requests using
+both the `key` and `full` login methods.
 
 Whether using the `key` configuration with an
 [institutional user](https://github.com/folio-org/edge-common#institutional-users)
