@@ -1,21 +1,30 @@
 package org.folio.edge.connexion;
 
+import static org.folio.edge.core.Constants.BCFKS_TYPE;
+import static org.folio.edge.core.Constants.SYS_KEYSTORE_PASSWORD;
+import static org.folio.edge.core.Constants.SYS_KEYSTORE_PATH;
+import static org.folio.edge.core.Constants.SYS_KEY_ALIAS;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
+
+import java.security.Security;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.folio.edge.core.Constants;
 import org.folio.edge.core.EdgeVerticleCore;
 import org.folio.edge.core.model.ClientInfo;
@@ -83,14 +92,27 @@ public class MainVerticle extends EdgeVerticleCore {
     Future.<Void>future(super::start).<Void>compose(res -> {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
-      WebClientOptions webClientOptions = new WebClientOptions()
-          .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
-          .setConnectTimeout(timeout);
+      WebClientOptions webClientOptions = initDefaultWebClientOptions(timeout);
       WebClient webClient = WebClient.create(vertx, webClientOptions);
       port = config().getInteger(Constants.SYS_PORT, DEFAULT_PORT);
       NetServerOptions options = new NetServerOptions()
           .setIdleTimeout(30)
           .setIdleTimeoutUnit(TimeUnit.SECONDS);
+
+      // initialize ssl if keystore_path and keystore_password are populated
+      String keystorePath = config().getString(SYS_KEYSTORE_PATH);
+      String keystorePassword = config().getString(SYS_KEYSTORE_PASSWORD);
+      if (keystorePath != null && keystorePassword != null) {
+        log.info("Enabling WebClient TLS/SSL configuration with using BCFIPS provider");
+        options.setSsl(true);
+        Security.addProvider(new BouncyCastleFipsProvider());
+        options.setKeyCertOptions(new KeyStoreOptions()
+            .setType(BCFKS_TYPE)
+            .setProvider(BouncyCastleFipsProvider.PROVIDER_NAME)
+            .setPath(keystorePath)
+            .setPassword(keystorePassword)
+            .setAlias(config().getString(SYS_KEY_ALIAS)));
+      }
       // start server.. three cases co consider:
       // 1: buffer overrun (too large incoming request)
       // 2: HTTP GET status for health check
@@ -240,5 +262,11 @@ public class MainVerticle extends EdgeVerticleCore {
           log.info("Record imported via copycat");
           return Future.succeededFuture();
         });
+  }
+
+  private WebClientOptions initDefaultWebClientOptions(int timeout) {
+    return new WebClientOptions().setTryUseCompression(true)
+        .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
+        .setConnectTimeout(timeout);
   }
 }
