@@ -1,9 +1,16 @@
 package org.folio.edge.connexion;
 
-import static org.folio.edge.core.Constants.BCFKS_TYPE;
 import static org.folio.edge.core.Constants.SYS_KEYSTORE_PASSWORD;
 import static org.folio.edge.core.Constants.SYS_KEYSTORE_PATH;
+import static org.folio.edge.core.Constants.SYS_KEYSTORE_PROVIDER;
+import static org.folio.edge.core.Constants.SYS_KEYSTORE_TYPE;
 import static org.folio.edge.core.Constants.SYS_KEY_ALIAS;
+import static org.folio.edge.core.Constants.SYS_KEY_ALIAS_PASSWORD;
+import static org.folio.edge.core.Constants.SYS_SSL_ENABLED;
+
+import java.util.Base64;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -18,14 +25,8 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
-
-import java.security.Security;
-import java.util.Base64;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.folio.edge.core.Constants;
 import org.folio.edge.core.EdgeVerticleCore;
 import org.folio.edge.core.model.ClientInfo;
@@ -101,19 +102,19 @@ public class MainVerticle extends EdgeVerticleCore {
           .setIdleTimeoutUnit(TimeUnit.SECONDS);
 
       // initialize ssl if keystore_path and keystore_password are populated
-      String keystorePath = config().getString(SYS_KEYSTORE_PATH);
-      String keystorePassword = config().getString(SYS_KEYSTORE_PASSWORD);
-      if (keystorePath != null && keystorePassword != null) {
-        log.info("Enabling WebClient TLS/SSL configuration with using BCFIPS provider");
+      final boolean isSslEnabled = config().getBoolean(SYS_SSL_ENABLED);
+      if (isSslEnabled) {
+        log.info("Enabling Vertx Http Server with TLS/SSL configuration...");
         options.setSsl(true);
-        Security.addProvider(new BouncyCastleFipsProvider());
         options.setKeyCertOptions(new KeyStoreOptions()
-            .setType(BCFKS_TYPE)
-            .setProvider(BouncyCastleFipsProvider.PROVIDER_NAME)
-            .setPath(keystorePath)
-            .setPassword(keystorePassword)
-            .setAlias(config().getString(SYS_KEY_ALIAS)));
+            .setType(config().getString(SYS_KEYSTORE_TYPE))
+            .setProvider(config().getString(SYS_KEYSTORE_PROVIDER))
+            .setPath(config().getString(SYS_KEYSTORE_PATH))
+            .setPassword(config().getString(SYS_KEYSTORE_PASSWORD))
+            .setAlias(config().getString(SYS_KEY_ALIAS))
+            .setAliasPassword(config().getString(SYS_KEY_ALIAS_PASSWORD)));
       }
+
       // start server.. three cases co consider:
       // 1: buffer overrun (too large incoming request)
       // 2: HTTP GET status for health check
