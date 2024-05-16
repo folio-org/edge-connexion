@@ -33,6 +33,9 @@
 
     <!-- the main class -->
     <exec.mainClass>org.folio.edge.connexion.MainVerticle</exec.mainClass>
+
+    <!--Dependency Properties-->
+    <bc-fips.version>1.0.2.5</bc-fips.version>
   </properties>
 
   <dependencyManagement>
@@ -69,8 +72,14 @@
       <artifactId>okapi-common</artifactId>
       <version>5.0.0</version>
     </dependency>
+    <!-- Library provides the basic cryptographic functionality complying with FIPS -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bc-fips</artifactId>
+      <version>${bc-fips.version}</version>
+    </dependency>
 
-    <!-- Test dependencies -->
+  <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
