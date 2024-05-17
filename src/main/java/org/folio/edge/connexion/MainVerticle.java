@@ -245,6 +245,7 @@ public class MainVerticle extends EdgeVerticleCore {
             }
           });
     }
+
     JsonObject content = new JsonObject();
     content.put("profileId", COPYCAT_PROFILE_OCLC);
     content.put("record",
