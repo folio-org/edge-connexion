@@ -115,7 +115,7 @@ public class MainVerticle extends EdgeVerticleCore {
             .setAliasPassword(config().getString(SYS_KEY_ALIAS_PASSWORD)));
       }
 
-      // start server.. three cases co consider:
+      // start server. three cases co consider:
       // 1: buffer overrun (too large incoming request)
       // 2: HTTP GET status for health check
       // 3: OCLC Connexion incoming request
