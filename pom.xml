@@ -72,13 +72,17 @@
       <artifactId>okapi-common</artifactId>
       <version>5.0.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.14.0</version>
+    </dependency>
     <!-- Library provides the basic cryptographic functionality complying with FIPS -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bc-fips</artifactId>
       <version>${bc-fips.version}</version>
     </dependency>
-
   <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>

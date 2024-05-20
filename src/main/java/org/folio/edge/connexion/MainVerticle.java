@@ -1,25 +1,28 @@
 package org.folio.edge.connexion;
 
-import static org.folio.edge.core.Constants.SYS_KEYSTORE_PASSWORD;
-import static org.folio.edge.core.Constants.SYS_KEYSTORE_PATH;
-import static org.folio.edge.core.Constants.SYS_KEYSTORE_PROVIDER;
-import static org.folio.edge.core.Constants.SYS_KEYSTORE_TYPE;
-import static org.folio.edge.core.Constants.SYS_KEY_ALIAS;
-import static org.folio.edge.core.Constants.SYS_KEY_ALIAS_PASSWORD;
-import static org.folio.edge.core.Constants.SYS_SSL_ENABLED;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_KEYSTORE_PASSWORD;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_KEYSTORE_PATH;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_KEYSTORE_PROVIDER;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_KEYSTORE_TYPE;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_KEY_ALIAS;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_KEY_ALIAS_PASSWORD;
+import static org.folio.edge.core.Constants.SYS_HTTP_SERVER_SSL_ENABLED;
+import static org.folio.edge.core.Constants.SYS_RESPONSE_COMPRESSION;
 
 import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import com.amazonaws.util.StringUtils;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
@@ -37,6 +40,8 @@ import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
 
 public class MainVerticle extends EdgeVerticleCore {
+
+  private static final Logger logger = LogManager.getLogger(MainVerticle.class);
 
   // ID of : https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json
   static final String COPYCAT_PROFILE_OCLC = "f26df83c-aa25-40b6-876e-96852c3d4fd4";
@@ -97,29 +102,21 @@ public class MainVerticle extends EdgeVerticleCore {
       WebClientOptions webClientOptions = initDefaultWebClientOptions(timeout);
       WebClient webClient = WebClient.create(vertx, webClientOptions);
       port = config().getInteger(Constants.SYS_PORT, DEFAULT_PORT);
-      NetServerOptions options = new NetServerOptions()
-          .setIdleTimeout(30)
-          .setIdleTimeoutUnit(TimeUnit.SECONDS);
 
-      // initialize ssl if keystore_path and keystore_password are populated
-      final boolean isSslEnabled = config().getBoolean(SYS_SSL_ENABLED);
-      if (isSslEnabled) {
-        log.info("Enabling Vertx Http Server with TLS/SSL configuration...");
-        options.setSsl(true);
-        options.setKeyCertOptions(new KeyStoreOptions()
-            .setType(config().getString(SYS_KEYSTORE_TYPE))
-            .setProvider(config().getString(SYS_KEYSTORE_PROVIDER))
-            .setPath(config().getString(SYS_KEYSTORE_PATH))
-            .setPassword(config().getString(SYS_KEYSTORE_PASSWORD))
-            .setAlias(config().getString(SYS_KEY_ALIAS))
-            .setAliasPassword(config().getString(SYS_KEY_ALIAS_PASSWORD)));
-      }
+      final HttpServerOptions serverOptions = new HttpServerOptions();
+      // initialize response compression
+      final boolean isCompressionSupported = config().getBoolean(SYS_RESPONSE_COMPRESSION);
+      logger.info("Response compression enabled: {}", isCompressionSupported);
+      serverOptions.setCompressionSupported(isCompressionSupported);
+
+      // initialize tls/ssl configuration for web server
+      configureSslIfEnabled(serverOptions);
 
       // start server. three cases co consider:
       // 1: buffer overrun (too large incoming request)
       // 2: HTTP GET status for health check
       // 3: OCLC Connexion incoming request
-      return vertx.createNetServer(options)
+      return vertx.createNetServer(serverOptions)
           .connectHandler(socket -> {
             ConnexionRequest connexionRequest = new ConnexionRequest();
             Promise<Void> connexionPromise = Promise.promise();
@@ -178,6 +175,39 @@ public class MainVerticle extends EdgeVerticleCore {
             });
           }).listen(port).mapEmpty();
     }).onComplete(promise);
+  }
+
+  private void configureSslIfEnabled(HttpServerOptions serverOptions) {
+    final boolean isSslEnabled = config().getBoolean(SYS_HTTP_SERVER_SSL_ENABLED);
+    if (isSslEnabled) {
+      logger.info("Enabling Vertx Http Server with TLS/SSL configuration...");
+      serverOptions.setSsl(true);
+      String keystoreType = config().getString(SYS_HTTP_SERVER_KEYSTORE_TYPE);
+      if (StringUtils.isNullOrEmpty(keystoreType)) {
+        throw new IllegalStateException("'keystore_type' system param must be specified when ssl_enabled = true");
+      }
+      logger.info("Using {} keystore type for SSL/TLS", keystoreType);
+      String keystoreProvider = config().getString(SYS_HTTP_SERVER_KEYSTORE_PROVIDER);
+      logger.info("Using {} keystore provider for SSL/TLS", keystoreProvider);
+      String keystorePath = config().getString(SYS_HTTP_SERVER_KEYSTORE_PATH);
+      if (StringUtils.isNullOrEmpty(keystorePath)) {
+        throw new IllegalStateException("'keystore_path' system param must be specified when ssl_enabled = true");
+      }
+      String keystorePassword = config().getString(SYS_HTTP_SERVER_KEYSTORE_PASSWORD);
+      if (StringUtils.isNullOrEmpty(keystorePassword)) {
+        throw new IllegalStateException("'keystore_password' system param must be specified when ssl_enabled = true");
+      }
+      String keyAlias = config().getString(SYS_HTTP_SERVER_KEY_ALIAS);
+      String keyAliasPassword = config().getString(SYS_HTTP_SERVER_KEY_ALIAS_PASSWORD);
+
+      serverOptions.setKeyCertOptions(new KeyStoreOptions()
+          .setType(keystoreType)
+          .setProvider(keystoreProvider)
+          .setPath(keystorePath)
+          .setPassword(keystorePassword)
+          .setAlias(keyAlias)
+          .setAliasPassword(keyAliasPassword));
+    }
   }
 
   static void parseLocalUserFull(String localUser, StringBuilder tenant, StringBuilder user,
@@ -267,7 +297,9 @@ public class MainVerticle extends EdgeVerticleCore {
 
   private WebClientOptions initDefaultWebClientOptions(int timeout) {
     return new WebClientOptions().setTryUseCompression(true)
+        .setSsl(true)
         .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
         .setConnectTimeout(timeout);
   }
+
 }
