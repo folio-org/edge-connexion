@@ -95,7 +95,7 @@ Example:
 
     curl http://localhost:8081/admin/health
 
-## Configuration
+## Security Configuration
 
 | Property                  | Default             | Description                                                               |
 |---------------------------|---------------------|---------------------------------------------------------------------------|
@@ -109,7 +109,6 @@ Example:
 | `log_level`               | `INFO`              | Log4j Log Level                                                           |
 | `request_timeout_ms`      | `30000`             | Request Timeout                                                           |
 | `api_key_sources`         | `PARAM,HEADER,PATH` | Defines the sources (order of precendence) of the API key.                |
-
 
 ## Additional information
 
