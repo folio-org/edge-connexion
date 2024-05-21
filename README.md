@@ -95,7 +95,7 @@ Example:
 
     curl http://localhost:8081/admin/health
 
-## Configuration
+## Security Configuration
 
 | Property                  | Default             | Description                                                               |
 |---------------------------|---------------------|---------------------------------------------------------------------------|
@@ -108,17 +108,11 @@ Example:
 | `token_cache_capacity`    | `100`               | Max token cache size                                                      |
 | `log_level`               | `INFO`              | Log4j Log Level                                                           |
 | `request_timeout_ms`      | `30000`             | Request Timeout                                                           |
-| `ssl_enabled`             | `false`             | Set whether SSL/TLS is enabled for Vertx Http Server                      |
-| `keystore_type`           | `NA`                | Set the key store type                                                    |
-| `keystore_provider`       | `NA`                | Set the provider name of the key store                                    |
-| `keystore_path`           | `NA`                | Set the path to the key store file                                        |
-| `keystore_password`       | `NA`                | Set the password for the key store                                        |
-| `key_alias`               | `NA`                | Optional param that points to a specific key within the key store         |
-| `key_alias_password`      | `NA`                | Optional param that points to a password of `key_alias` if it protected   |
 | `api_key_sources`         | `PARAM,HEADER,PATH` | Defines the sources (order of precendence) of the API key.                |
 
-
 ## Additional information
+
+There will be a single instance of okapi client per OkapiClientFactory and per tenant, which means that this client should never be closed or else there will be runtime errors. To enforce this behaviour, method close() has been removed from OkapiClient class.
 
 Other FOLIO Developer documentation is at
 [dev.folio.org](https://dev.folio.org/)
