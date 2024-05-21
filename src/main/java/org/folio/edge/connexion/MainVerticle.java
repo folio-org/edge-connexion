@@ -1,9 +1,5 @@
 package org.folio.edge.connexion;
 
-import java.util.Base64;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -16,6 +12,9 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
+import java.util.Base64;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.Constants;
@@ -29,8 +28,6 @@ import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
 
 public class MainVerticle extends EdgeVerticleCore {
-
-  private static final Logger logger = LogManager.getLogger(MainVerticle.class);
 
   // ID of : https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json
   static final String COPYCAT_PROFILE_OCLC = "f26df83c-aa25-40b6-876e-96852c3d4fd4";
