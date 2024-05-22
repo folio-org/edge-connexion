@@ -259,11 +259,10 @@ public class MainVerticle extends EdgeVerticleCore {
   }
 
   private WebClientOptions initDefaultWebClientOptions(int timeout) {
-    WebClientOptions webClientOptions = new WebClientOptions().setTryUseCompression(true)
+    return new WebClientOptions().setTryUseCompression(true)
         .setSsl(true)
         .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
         .setConnectTimeout(timeout);
-    return webClientOptions;
   }
 
   private void configureTrustOptions(WebClientOptions webClientOptions) {
