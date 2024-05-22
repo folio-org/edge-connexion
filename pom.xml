@@ -33,9 +33,6 @@
 
     <!-- the main class -->
     <exec.mainClass>org.folio.edge.connexion.MainVerticle</exec.mainClass>
-
-    <!--Dependency Properties-->
-    <bc-fips.version>1.0.2.5</bc-fips.version>
   </properties>
 
   <dependencyManagement>

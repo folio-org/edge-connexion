@@ -1,13 +1,16 @@
 package org.folio.edge.connexion;
 
+import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -26,6 +29,8 @@ import org.folio.edge.core.utils.SslConfigurationUtil;
 import org.folio.okapi.common.refreshtoken.client.Client;
 import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
+
+import static org.folio.edge.core.Constants.*;
 
 public class MainVerticle extends EdgeVerticleCore {
 
@@ -86,6 +91,8 @@ public class MainVerticle extends EdgeVerticleCore {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
       WebClientOptions webClientOptions = initDefaultWebClientOptions(timeout);
+      configureTrustOptions(webClientOptions);
+
       WebClient webClient = WebClient.create(vertx, webClientOptions);
       port = config().getInteger(Constants.SYS_PORT, DEFAULT_PORT);
 
@@ -247,10 +254,36 @@ public class MainVerticle extends EdgeVerticleCore {
   }
 
   private WebClientOptions initDefaultWebClientOptions(int timeout) {
-    return new WebClientOptions().setTryUseCompression(true)
+    WebClientOptions webClientOptions = new WebClientOptions().setTryUseCompression(true)
         .setSsl(true)
         .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
         .setConnectTimeout(timeout);
+    return webClientOptions;
+  }
+
+  private void configureTrustOptions(WebClientOptions webClientOptions) {
+    log.info("Creating OkapiClientFactory with Enhance HTTP Endpoint Security and TLS mode enabled");
+    String truststoreType = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_TYPE);
+    String truststoreProvider = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PROVIDER);
+    String truststorePath = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PATH);
+    String truststorePassword = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD);
+    String keyAlias = config().getString(SYS_WEB_CLIENT_KEY_ALIAS);
+    String keyAliasPassword = config().getString(SYS_WEB_CLIENT_KEY_ALIAS_PASSWORD);
+
+    if (!StringUtils.isNullOrEmpty(truststoreType)
+        && !StringUtils.isNullOrEmpty(truststorePath)
+        && !StringUtils.isNullOrEmpty(truststorePassword)) {
+      log.info("Web client truststore options for type: {} are set, configuring Web Client with them", truststoreType);
+      TrustOptions trustOptions = new KeyStoreOptions()
+          .setType(truststoreType)
+          .setProvider(truststoreProvider)
+          .setPath(truststorePath)
+          .setPassword(truststorePassword)
+          .setAlias(keyAlias)
+          .setAliasPassword(keyAliasPassword);
+
+      webClientOptions.setTrustOptions(trustOptions);
+    }
   }
 
 }
