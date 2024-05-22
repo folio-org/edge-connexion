@@ -1,6 +1,7 @@
 package org.folio.edge.connexion;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -14,7 +15,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.folio.edge.core.Constants;
+import org.folio.edge.core.utils.ApiKeyUtils;
 import org.folio.edge.core.utils.SslConfigurationUtil;
+import org.folio.edge.core.utils.test.MockOkapi;
 import org.folio.edge.core.utils.test.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -22,6 +25,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.Mockito.spy;
 
 @RunWith(VertxUnitRunner.class)
 public class MainVerticleTslTest {
@@ -80,6 +87,12 @@ public class MainVerticleTslTest {
         }));
   }
 
+  @Test
+  public void testSetupCorrectTslConfig(TestContext context) throws Exception {
+    JsonObject config = getCommonConfig();
+    deployVerticle(context, config);
+  }
+
   private JsonObject getCommonConfig() {
     int serverPort = TestUtils.getPort();
     return new JsonObject().put(Constants.SYS_PORT, serverPort)
@@ -91,5 +104,22 @@ public class MainVerticleTslTest {
         .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_TYPE, KEYSTORE_TYPE)
         .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_PATH, TRUST_STORE_PATH)
         .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD, KEYSTORE_PASSWORD);
+  }
+
+  private void deployVerticle(TestContext context, JsonObject config) throws ApiKeyUtils.MalformedApiKeyException {
+    int okapiPort = TestUtils.getPort();
+
+    List<String> knownTenants = new ArrayList<>();
+    String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "diku");
+    knownTenants.add(ApiKeyUtils.parseApiKey(apiKey).tenantId);
+
+    MockOkapi mockOkapi = spy(new MockOkapi(okapiPort, knownTenants));
+    mockOkapi.start()
+        .onComplete(context.asyncAssertSuccess());
+
+    vertx = Vertx.vertx();
+
+    final DeploymentOptions opt = new DeploymentOptions().setConfig(config);
+    vertx.deployVerticle(MainVerticle.class.getName(), opt, context.asyncAssertSuccess());
   }
 }
