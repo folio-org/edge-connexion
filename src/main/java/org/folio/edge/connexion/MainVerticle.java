@@ -1,5 +1,12 @@
 package org.folio.edge.connexion;
 
+import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_KEY_ALIAS;
+import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_KEY_ALIAS_PASSWORD;
+import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD;
+import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_PATH;
+import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_PROVIDER;
+import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_TYPE;
+
 import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -29,8 +36,6 @@ import org.folio.edge.core.utils.SslConfigurationUtil;
 import org.folio.okapi.common.refreshtoken.client.Client;
 import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
-
-import static org.folio.edge.core.Constants.*;
 
 public class MainVerticle extends EdgeVerticleCore {
 
@@ -262,7 +267,8 @@ public class MainVerticle extends EdgeVerticleCore {
   }
 
   private void configureTrustOptions(WebClientOptions webClientOptions) {
-    log.info("Creating OkapiClientFactory with Enhance HTTP Endpoint Security and TLS mode enabled");
+    log.info("configureTrustOptions:: Creating OkapiClientFactory with Enhance "
+        + "HTTP Endpoint Security and TLS mode enabled");
     String truststoreType = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_TYPE);
     String truststoreProvider = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PROVIDER);
     String truststorePath = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PATH);
@@ -273,7 +279,9 @@ public class MainVerticle extends EdgeVerticleCore {
     if (!StringUtils.isNullOrEmpty(truststoreType)
         && !StringUtils.isNullOrEmpty(truststorePath)
         && !StringUtils.isNullOrEmpty(truststorePassword)) {
-      log.info("Web client truststore options for type: {} are set, configuring Web Client with them", truststoreType);
+      log.info("configureTrustOptions:: Web client truststore options for type: {} are set, "
+          + "configuring Web Client with them", truststoreType);
+
       TrustOptions trustOptions = new KeyStoreOptions()
           .setType(truststoreType)
           .setProvider(truststoreProvider)
