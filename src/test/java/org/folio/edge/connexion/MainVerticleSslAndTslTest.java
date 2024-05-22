@@ -30,6 +30,11 @@ import static org.mockito.Mockito.spy;
 @RunWith(VertxUnitRunner.class)
 public class MainVerticleSslAndTslTest {
 
+  private static final String KEYSTORE_TYPE = "BCFKS";
+  private static final String KEYSTORE_PATH = "test.keystore 1.bcfks";
+  private static final String TRUST_STORE_PATH = "test.truststore 1.bcfks";
+  private static final String KEYSTORE_PASSWORD = "SecretPassword";
+
   private Vertx vertx;
 
   @Rule
@@ -159,12 +164,12 @@ public class MainVerticleSslAndTslTest {
     int serverPort = TestUtils.getPort();
     return new JsonObject().put(Constants.SYS_PORT, serverPort)
         .put(Constants.SYS_HTTP_SERVER_SSL_ENABLED, true)
-        .put(Constants.SYS_HTTP_SERVER_KEYSTORE_TYPE, "BCFKS")
-        .put(Constants.SYS_HTTP_SERVER_KEYSTORE_PATH, "test.keystore 1.bcfks")
-        .put(Constants.SYS_HTTP_SERVER_KEYSTORE_PASSWORD, "SecretPassword")
+        .put(Constants.SYS_HTTP_SERVER_KEYSTORE_TYPE, KEYSTORE_TYPE)
+        .put(Constants.SYS_HTTP_SERVER_KEYSTORE_PATH, KEYSTORE_PATH)
+        .put(Constants.SYS_HTTP_SERVER_KEYSTORE_PASSWORD, KEYSTORE_PASSWORD)
         .put(Constants.SYS_WEB_CLIENT_SSL_ENABLED, true)
-        .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_TYPE, "BCFKS")
-        .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_PATH, "test.truststore 1.bcfks")
-        .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD, "SecretPassword");
+        .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_TYPE, KEYSTORE_TYPE)
+        .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_PATH, TRUST_STORE_PATH)
+        .put(Constants.SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD, KEYSTORE_PASSWORD);
   }
 }
