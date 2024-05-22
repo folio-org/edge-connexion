@@ -23,7 +23,6 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import java.util.Base64;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -95,7 +94,9 @@ public class MainVerticle extends EdgeVerticleCore {
     Future.<Void>future(super::start).<Void>compose(res -> {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
-      WebClientOptions webClientOptions = initDefaultWebClientOptions(timeout);
+      WebClientOptions webClientOptions = new WebClientOptions()
+          .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
+          .setConnectTimeout(timeout);
       configureTrustOptions(webClientOptions);
 
       WebClient webClient = WebClient.create(vertx, webClientOptions);
@@ -205,40 +206,41 @@ public class MainVerticle extends EdgeVerticleCore {
     ClientOptions clientOptions = new ClientOptions().webClient(webClient).okapiUrl(okapiUrl);
     org.folio.okapi.common.refreshtoken.client.Client client;
 
-    // key, but checkstyle insists about a default section!!
-    if (Objects.requireNonNull(loginStrategyType) == LoginStrategyType.full) {
-      // scenario 1: localUser 'tenant user password'  (whitespace between these)
-      StringBuilder tenant = new StringBuilder();
-      StringBuilder user = new StringBuilder();
-      StringBuilder password = new StringBuilder();
-      log.info("Login strategy {} and using tenant {}", loginStrategyType, tenant);
-      parseLocalUserFull(connexionRequest.getLocalUser().stripLeading(), tenant, user, password);
-      if (password.isEmpty()) {
-        return Future.failedFuture("Bad format of localUser");
-      }
-      client = Client.createLoginClient(clientOptions, tenantUserCache, tenant.toString(),
-          user.toString(), () -> Future.succeededFuture(password.toString()));
-    } else {
-      // scenario 2: api key in localUser
-      ClientInfo clientInfo;
-      try {
-        clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser().strip());
-      } catch (ApiKeyUtils.MalformedApiKeyException e) {
-        return Future.failedFuture("access denied");
-      }
-      log.info("Login strategy {} and using tenant {}", loginStrategyType, clientInfo.tenantId);
-      client = Client.createLoginClient(clientOptions, tenantUserCache,
-          clientInfo.tenantId, clientInfo.username, () -> {
-            try {
-              return Future.succeededFuture(
-                  secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
-            } catch (SecureStore.NotFoundException e) {
-              log.error("Exception retrieving password", e);
-              return Future.failedFuture("Error retrieving password"); // do not reveal anything
-            }
-          });
+    switch (loginStrategyType) {
+      default: // key, but checkstyle insists about a default section!!
+        // scenario 1: api key in localUser
+        ClientInfo clientInfo;
+        try {
+          clientInfo = ApiKeyUtils.parseApiKey(connexionRequest.getLocalUser().strip());
+        } catch (ApiKeyUtils.MalformedApiKeyException e) {
+          return Future.failedFuture("access denied");
+        }
+        log.info("Login strategy {} and using tenant {}", loginStrategyType, clientInfo.tenantId);
+        client = Client.createLoginClient(clientOptions, tenantUserCache,
+            clientInfo.tenantId, clientInfo.username, () -> {
+              try {
+                return Future.succeededFuture(
+                    secureStore.get(clientInfo.salt, clientInfo.tenantId, clientInfo.username));
+              } catch (SecureStore.NotFoundException e) {
+                log.error("Exception retrieving password", e);
+                return Future.failedFuture("Error retrieving password"); // do not reveal anything
+              }
+            });
+        break;
+      case full:
+        // scenario 2: localUser 'tenant user password'  (whitespace between these)
+        StringBuilder tenant = new StringBuilder();
+        StringBuilder user = new StringBuilder();
+        StringBuilder password = new StringBuilder();
+        log.info("Login strategy {} and using tenant {}", loginStrategyType, tenant);
+        parseLocalUserFull(connexionRequest.getLocalUser().stripLeading(), tenant, user, password);
+        if (password.length() == 0) {
+          return Future.failedFuture("Bad format of localUser");
+        }
+        client = Client.createLoginClient(clientOptions, tenantUserCache, tenant.toString(),
+            user.toString(), () -> Future.succeededFuture(password.toString()));
+        break;
     }
-
     JsonObject content = new JsonObject();
     content.put("profileId", COPYCAT_PROFILE_OCLC);
     content.put("record",
@@ -256,13 +258,6 @@ public class MainVerticle extends EdgeVerticleCore {
           log.info("Record imported via copycat");
           return Future.succeededFuture();
         });
-  }
-
-  private WebClientOptions initDefaultWebClientOptions(int timeout) {
-    return new WebClientOptions().setTryUseCompression(true)
-        .setSsl(true)
-        .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
-        .setConnectTimeout(timeout);
   }
 
   private void configureTrustOptions(WebClientOptions webClientOptions) {
@@ -292,5 +287,4 @@ public class MainVerticle extends EdgeVerticleCore {
       webClientOptions.setTrustOptions(trustOptions);
     }
   }
-
 }
