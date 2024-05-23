@@ -119,7 +119,7 @@ public class MainVerticleTslTest {
 
   @Test
   public void testSetupCorrectTslConfig(TestContext context) throws Exception {
-    JsonObject config = getCommonConfig(false);
+    JsonObject config = getCommonConfig(true);
     deployVerticle(context, config);
   }
 
