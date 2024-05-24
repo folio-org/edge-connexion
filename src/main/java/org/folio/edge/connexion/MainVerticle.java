@@ -267,7 +267,8 @@ public class MainVerticle extends EdgeVerticleCore {
         && !StringUtils.isNullOrEmpty(truststorePath)
         && !StringUtils.isNullOrEmpty(truststorePassword)) {
 
-      log.info("Web client truststore options for type: {} are set, configuring Web Client with them", truststoreType);
+      log.info("Web client truststore options for type: {} are set, "
+          + "configuring Web Client with them", truststoreType);
       TrustOptions trustOptions = new KeyStoreOptions()
           .setType(truststoreType)
           .setPath(truststorePath)
