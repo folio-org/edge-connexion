@@ -1,10 +1,8 @@
 package org.folio.edge.connexion;
 
-import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_PASSWORD;
-import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_PATH;
-import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_TYPE;
-import static org.folio.edge.core.Constants.SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_ALIAS;
-import static org.folio.edge.core.Constants.SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_PASSWORD;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPATH;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTORETYPE;
 
 import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
@@ -262,24 +260,18 @@ public class MainVerticle extends EdgeVerticleCore {
   private void configureTrustOptions(WebClientOptions webClientOptions) {
     log.info("configureTrustOptions:: Creating OkapiClientFactory with Enhance "
         + "HTTP Endpoint Security and TLS mode enabled");
-    String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_TYPE);
-    String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_PATH);
-    String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_PASSWORD);
-    String keyAlias = config().getString(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_ALIAS);
-    String keyAliasPassword = config().getString(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_PASSWORD);
-
+    String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
+    String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
+    String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
     if (!StringUtils.isNullOrEmpty(truststoreType)
         && !StringUtils.isNullOrEmpty(truststorePath)
         && !StringUtils.isNullOrEmpty(truststorePassword)) {
-      log.info("configureTrustOptions:: Web client truststore options for type: {} are set, "
-          + "configuring Web Client with them", truststoreType);
 
+      log.info("Web client truststore options for type: {} are set, configuring Web Client with them", truststoreType);
       TrustOptions trustOptions = new KeyStoreOptions()
           .setType(truststoreType)
           .setPath(truststorePath)
-          .setPassword(truststorePassword)
-          .setAlias(keyAlias)
-          .setAliasPassword(keyAliasPassword);
+          .setPassword(truststorePassword);
 
       webClientOptions.setTrustOptions(trustOptions);
     }
