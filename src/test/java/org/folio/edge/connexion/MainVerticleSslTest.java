@@ -47,7 +47,7 @@ public class MainVerticleSslTest {
   public void setupSslConfigWithoutPassword(TestContext context) throws Exception {
     JsonObject config = getCommonConfig()
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_TYPE, "JKS")
-        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PATH, "sample_keystore.jks");
+        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_LOCATION, "sample_keystore.jks");
 
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("'SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PASSWORD' system param must be specified");
@@ -59,7 +59,7 @@ public class MainVerticleSslTest {
   public void setupSslConfigWitInvalidPath(TestContext context) throws Exception {
     JsonObject config = getCommonConfig()
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_TYPE, "JKS")
-        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PATH, "some_keystore_path")
+        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_LOCATION, "some_keystore_path")
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PASSWORD, "password");
 
     thrown.expect(FileSystemException.class);
@@ -72,7 +72,7 @@ public class MainVerticleSslTest {
   public void setupSslConfigWithNotValidPassword(TestContext context) throws Exception {
     JsonObject config = getCommonConfig()
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_TYPE, "JKS")
-        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PATH, "sample_keystore.jks")
+        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_LOCATION, "sample_keystore.jks")
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PASSWORD, "not_valid_password");
 
     thrown.expect(IOException.class);
@@ -85,7 +85,7 @@ public class MainVerticleSslTest {
   public void setupCorrectSslConfig(TestContext context) throws Exception {
     JsonObject config = getCommonConfig()
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_TYPE, "JKS")
-        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PATH, "sample_keystore.jks")
+        .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_LOCATION, "sample_keystore.jks")
         .put(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEYSTORE_PASSWORD, "password");
 
     deployVerticle(context, config);

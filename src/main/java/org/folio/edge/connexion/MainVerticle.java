@@ -3,6 +3,8 @@ package org.folio.edge.connexion;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_PASSWORD;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_PATH;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_TYPE;
+import static org.folio.edge.core.Constants.SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_ALIAS;
+import static org.folio.edge.core.Constants.SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_PASSWORD;
 
 import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
@@ -263,6 +265,8 @@ public class MainVerticle extends EdgeVerticleCore {
     String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_TYPE);
     String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_PATH);
     String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_PASSWORD);
+    String keyAlias = config().getString(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_ALIAS);
+    String keyAliasPassword = config().getString(SPRING_SSL_BUNDLE_JKS_WEB_SERVER_KEY_PASSWORD);
 
     if (!StringUtils.isNullOrEmpty(truststoreType)
         && !StringUtils.isNullOrEmpty(truststorePath)
@@ -273,7 +277,9 @@ public class MainVerticle extends EdgeVerticleCore {
       TrustOptions trustOptions = new KeyStoreOptions()
           .setType(truststoreType)
           .setPath(truststorePath)
-          .setPassword(truststorePassword);
+          .setPassword(truststorePassword)
+          .setAlias(keyAlias)
+          .setAliasPassword(keyAliasPassword);
 
       webClientOptions.setTrustOptions(trustOptions);
     }
