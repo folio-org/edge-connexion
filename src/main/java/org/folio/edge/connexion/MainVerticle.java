@@ -1,5 +1,6 @@
 package org.folio.edge.connexion;
 
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_ENABLED;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPATH;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTORETYPE;
@@ -258,23 +259,29 @@ public class MainVerticle extends EdgeVerticleCore {
   }
 
   private void configureTrustOptions(WebClientOptions webClientOptions) {
-    log.info("configureTrustOptions:: Creating OkapiClientFactory with Enhance "
-        + "HTTP Endpoint Security and TLS mode enabled");
-    String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
-    String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
-    String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
-    if (!StringUtils.isNullOrEmpty(truststoreType)
-        && !StringUtils.isNullOrEmpty(truststorePath)
-        && !StringUtils.isNullOrEmpty(truststorePassword)) {
+    boolean isSslEnabled = config().getBoolean(FOLIO_CLIENT_TLS_ENABLED);
+    if (isSslEnabled) {
+      log.info("Creating Web client with Enhance HTTP Endpoint Security and TLS mode enabled");
+      String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
+      String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
+      String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
+      if (!StringUtils.isNullOrEmpty(truststoreType)
+          && !StringUtils.isNullOrEmpty(truststorePath)
+          && !StringUtils.isNullOrEmpty(truststorePassword)) {
 
-      log.info("Web client truststore options for type: {} are set, "
-          + "configuring Web Client with them", truststoreType);
-      TrustOptions trustOptions = new KeyStoreOptions()
-          .setType(truststoreType)
-          .setPath(truststorePath)
-          .setPassword(truststorePassword);
+        log.info("Web client truststore options for type: {} are set, "
+            + "configuring Web Client with them", truststoreType);
+        TrustOptions trustOptions = new KeyStoreOptions()
+            .setType(truststoreType)
+            .setPath(truststorePath)
+            .setPassword(truststorePassword);
 
-      webClientOptions.setTrustOptions(trustOptions);
+        webClientOptions
+            .setSsl(true)
+            .setTrustOptions(trustOptions);
+      } else {
+        log.info("Web client truststore options are not set");
+      }
     }
   }
 }
