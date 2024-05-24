@@ -1,11 +1,8 @@
 package org.folio.edge.connexion;
 
-import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_KEY_ALIAS;
-import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_KEY_ALIAS_PASSWORD;
-import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD;
-import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_PATH;
-import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_PROVIDER;
-import static org.folio.edge.core.Constants.SYS_WEB_CLIENT_TRUSTSTORE_TYPE;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_PASSWORD;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_PATH;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUST_STORE_TYPE;
 
 import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
@@ -263,12 +260,9 @@ public class MainVerticle extends EdgeVerticleCore {
   private void configureTrustOptions(WebClientOptions webClientOptions) {
     log.info("configureTrustOptions:: Creating OkapiClientFactory with Enhance "
         + "HTTP Endpoint Security and TLS mode enabled");
-    String truststoreType = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_TYPE);
-    String truststoreProvider = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PROVIDER);
-    String truststorePath = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PATH);
-    String truststorePassword = config().getString(SYS_WEB_CLIENT_TRUSTSTORE_PASSWORD);
-    String keyAlias = config().getString(SYS_WEB_CLIENT_KEY_ALIAS);
-    String keyAliasPassword = config().getString(SYS_WEB_CLIENT_KEY_ALIAS_PASSWORD);
+    String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_TYPE);
+    String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_PATH);
+    String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUST_STORE_PASSWORD);
 
     if (!StringUtils.isNullOrEmpty(truststoreType)
         && !StringUtils.isNullOrEmpty(truststorePath)
@@ -278,11 +272,8 @@ public class MainVerticle extends EdgeVerticleCore {
 
       TrustOptions trustOptions = new KeyStoreOptions()
           .setType(truststoreType)
-          .setProvider(truststoreProvider)
           .setPath(truststorePath)
-          .setPassword(truststorePassword)
-          .setAlias(keyAlias)
-          .setAliasPassword(keyAliasPassword);
+          .setPassword(truststorePassword);
 
       webClientOptions.setTrustOptions(trustOptions);
     }
