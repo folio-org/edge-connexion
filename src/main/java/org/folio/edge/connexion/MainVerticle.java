@@ -93,6 +93,7 @@ public class MainVerticle extends EdgeVerticleCore {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
       WebClientOptions webClientOptions = new WebClientOptions()
+          .setSsl(true)
           .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
           .setConnectTimeout(timeout);
       configureTrustOptions(webClientOptions);
@@ -277,7 +278,6 @@ public class MainVerticle extends EdgeVerticleCore {
             .setPassword(truststorePassword);
 
         webClientOptions
-            .setSsl(true)
             .setTrustOptions(trustOptions);
       } else {
         log.info("Web client truststore options are not set");
