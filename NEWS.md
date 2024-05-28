@@ -1,3 +1,8 @@
+## 1.3.0 2024-05-28
+
+* [EDGCONX-46](https://issues.folio.org/browse/EDGCONX-46) Enhance HTTP Endpoint Security with TLS and FIPS-140-2 Compliant Cryptography.
+* [EDGCONX-45](https://issues.folio.org/browse/EDGCONX-45) Enhance WebClient TLS Configuration for Secure Connections to OKAPI.
+
 ## 1.2.0 2024-03-21
 
 * [EDGCONX-41](https://issues.folio.org/browse/EDGCONX-41) Upgrade Vert.x to 4.5.3, edge-common to 4.6.0.
