@@ -1,13 +1,21 @@
 package org.folio.edge.connexion;
 
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_ENABLED;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPATH;
+import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTORETYPE;
+
+import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -21,6 +29,7 @@ import org.folio.edge.core.EdgeVerticleCore;
 import org.folio.edge.core.model.ClientInfo;
 import org.folio.edge.core.security.SecureStore;
 import org.folio.edge.core.utils.ApiKeyUtils;
+import org.folio.edge.core.utils.SslConfigurationUtil;
 import org.folio.okapi.common.refreshtoken.client.Client;
 import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
@@ -86,12 +95,19 @@ public class MainVerticle extends EdgeVerticleCore {
       WebClientOptions webClientOptions = new WebClientOptions()
           .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
           .setConnectTimeout(timeout);
+      configureTrustOptions(webClientOptions);
+
       WebClient webClient = WebClient.create(vertx, webClientOptions);
       port = config().getInteger(Constants.SYS_PORT, DEFAULT_PORT);
+
       NetServerOptions options = new NetServerOptions()
           .setIdleTimeout(30)
           .setIdleTimeoutUnit(TimeUnit.SECONDS);
-      // start server.. three cases co consider:
+
+      // initialize tls/ssl configuration for web server
+      SslConfigurationUtil.configureSslServerOptionsIfEnabled(config(), options);
+
+      // start server. three cases co consider:
       // 1: buffer overrun (too large incoming request)
       // 2: HTTP GET status for health check
       // 3: OCLC Connexion incoming request
@@ -240,5 +256,32 @@ public class MainVerticle extends EdgeVerticleCore {
           log.info("Record imported via copycat");
           return Future.succeededFuture();
         });
+  }
+
+  private void configureTrustOptions(WebClientOptions webClientOptions) {
+    boolean isSslEnabled = config().getBoolean(FOLIO_CLIENT_TLS_ENABLED);
+    if (isSslEnabled) {
+      log.info("Creating Web client with Enhance HTTP Endpoint Security and TLS mode enabled");
+      webClientOptions.setSsl(true);
+      String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
+      String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
+      String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
+      if (!StringUtils.isNullOrEmpty(truststoreType)
+          && !StringUtils.isNullOrEmpty(truststorePath)
+          && !StringUtils.isNullOrEmpty(truststorePassword)) {
+
+        log.info("Web client truststore options for type: {} are set, "
+            + "configuring Web Client with them", truststoreType);
+        TrustOptions trustOptions = new KeyStoreOptions()
+            .setType(truststoreType)
+            .setPath(truststorePath)
+            .setPassword(truststorePassword);
+
+        webClientOptions
+            .setTrustOptions(trustOptions);
+      } else {
+        log.info("Web client truststore options are not set");
+      }
+    }
   }
 }
