@@ -93,7 +93,6 @@ public class MainVerticle extends EdgeVerticleCore {
       // One webClient per Verticle
       Integer timeout = config().getInteger(Constants.SYS_REQUEST_TIMEOUT_MS);
       WebClientOptions webClientOptions = new WebClientOptions()
-          .setSsl(true)
           .setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(timeout)
           .setConnectTimeout(timeout);
       configureTrustOptions(webClientOptions);
@@ -263,6 +262,7 @@ public class MainVerticle extends EdgeVerticleCore {
     boolean isSslEnabled = config().getBoolean(FOLIO_CLIENT_TLS_ENABLED);
     if (isSslEnabled) {
       log.info("Creating Web client with Enhance HTTP Endpoint Security and TLS mode enabled");
+      webClientOptions.setSsl(true);
       String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
       String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
       String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
