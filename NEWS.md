@@ -1,6 +1,6 @@
 ## 1.3.1 2024-07-04
 
-* [EDGCONX-49](https://issues.folio.org/browse/EDGCONX-49) - changes needed to support FIPS-approved crypto modules
+* [EDGCONX-49](https://issues.folio.org/browse/EDGCONX-49) - edge-common 4.7.1: AwsParamStore to support FIPS-approved crypto modules
 
 ## 1.3.0 2024-05-28
 
