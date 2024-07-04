@@ -1,7 +1,6 @@
 ## 1.3.1 2024-07-04
 
-* [EDGCONX-46](https://issues.folio.org/browse/EDGCONX-46) Enhance HTTP Endpoint Security with TLS and FIPS-140-2 Compliant Cryptography.
-* [EDGCONX-45](https://issues.folio.org/browse/EDGCONX-45) Enhance WebClient TLS Configuration for Secure Connections to OKAPI.
+* [EDGCONX-49](https://issues.folio.org/browse/EDGCONX-49) - changes needed to support FIPS-approved crypto modules
 
 ## 1.3.0 2024-05-28
 
