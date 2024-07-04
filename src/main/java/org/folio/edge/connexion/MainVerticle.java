@@ -278,7 +278,8 @@ public class MainVerticle extends EdgeVerticleCore {
             .setPassword(truststorePassword);
 
         webClientOptions
-            .setTrustOptions(trustOptions);
+            .setTrustOptions(trustOptions)
+            .setVerifyHost(false);  //Hardcoded now. Later it could be configurable using env vars.
       } else {
         log.info("Web client truststore options are not set");
       }
