@@ -5,7 +5,6 @@ import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPATH;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTORETYPE;
 
-import com.amazonaws.util.StringUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -22,6 +21,7 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.Constants;
@@ -266,9 +266,9 @@ public class MainVerticle extends EdgeVerticleCore {
       String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
       String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
       String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
-      if (!StringUtils.isNullOrEmpty(truststoreType)
-          && !StringUtils.isNullOrEmpty(truststorePath)
-          && !StringUtils.isNullOrEmpty(truststorePassword)) {
+      if (StringUtils.isNotEmpty(truststoreType)
+          && StringUtils.isNotEmpty(truststorePath)
+          && StringUtils.isNotEmpty(truststorePassword)) {
 
         log.info("Web client truststore options for type: {} are set, "
             + "configuring Web Client with them", truststoreType);
