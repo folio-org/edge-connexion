@@ -1,3 +1,10 @@
+## 1.4.0 2025-03-12
+
+* [EDGCONX-52](https://issues.folio.org/browse/EDGCONX-52) Upgrades AWS SDK to 2.x.
+* [FOLREL-691](https://issues.folio.org/browse/FOLREL-691) Upgrades to Java 21.
+* [EDGCONX-49](https://issues.folio.org/browse/EDGCONX-49) Supports FIPS approved crypto modules.
+
+
 ## 1.3.0 2024-05-28
 
 * [EDGCONX-46](https://issues.folio.org/browse/EDGCONX-46) Enhance HTTP Endpoint Security with TLS and FIPS-140-2 Compliant Cryptography.
