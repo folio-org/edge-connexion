@@ -12,11 +12,11 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.utils.ApiKeyUtils;
+import org.folio.okapi.common.ChattyHttpResponseExpectation;
 import org.folio.okapi.common.XOkapiHeaders;
 import org.junit.After;
 import org.junit.Assert;
@@ -57,7 +57,7 @@ public class MainVerticleTest {
         ctx.response().end("Bad Request");
         return;
       }
-      JsonObject login = ctx.getBodyAsJson();
+      JsonObject login = ctx.body().asJsonObject();
       String username = login.getString("username");
       String password = login.getString("password");
       // only accept the diku that is in src/test/resources/ephemeral.properties
@@ -171,8 +171,8 @@ public class MainVerticleTest {
     WebClient webClient = WebClient.create(vertx);
     deploy(new MainVerticle())
         .compose(x -> webClient.get(PORT, "localhost", "/admin/health")
-            .expect(ResponsePredicate.SC_OK)
-            .send())
+            .send()
+            .expecting(ChattyHttpResponseExpectation.SC_OK))
         .onComplete(context.asyncAssertSuccess());
   }
 
@@ -181,11 +181,11 @@ public class MainVerticleTest {
     WebClient webClient = WebClient.create(vertx);
     deploy(new MainVerticle())
         .compose(x -> webClient.get(PORT, "localhost", "/admin/health")
-            .expect(ResponsePredicate.SC_OK)
-            .send())
+            .send()
+            .expecting(ChattyHttpResponseExpectation.SC_OK))
         .compose(x -> webClient.get(PORT, "localhost", "/other")
-            .expect(ResponsePredicate.SC_OK)
-            .send())
+            .send()
+            .expecting(ChattyHttpResponseExpectation.SC_OK))
         .onComplete(context.asyncAssertSuccess());
   }
 
@@ -363,7 +363,7 @@ public class MainVerticleTest {
     String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("Response status code 400 is not equal to 200", x.getMessage())));
+        context.assertEquals("Response status code 400 is not equal to 200: Bad request (bad MARC)", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)

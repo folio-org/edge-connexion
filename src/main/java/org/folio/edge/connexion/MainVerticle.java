@@ -18,7 +18,6 @@ import io.vertx.core.net.TrustOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +29,7 @@ import org.folio.edge.core.model.ClientInfo;
 import org.folio.edge.core.security.SecureStore;
 import org.folio.edge.core.utils.ApiKeyUtils;
 import org.folio.edge.core.utils.SslConfigurationUtil;
+import org.folio.okapi.common.ChattyHttpResponseExpectation;
 import org.folio.okapi.common.refreshtoken.client.Client;
 import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
@@ -246,12 +246,13 @@ public class MainVerticle extends EdgeVerticleCore {
             Base64.getEncoder().encodeToString(record.getBytes())
         ));
     HttpRequest<Buffer> bufferHttpRequest = webClient
-        .postAbs(okapiUrl + "/copycat/imports").expect(ResponsePredicate.SC_OK);
+        .postAbs(okapiUrl + "/copycat/imports");
 
     // Accept is not necessary with mod-copycat because it's based on RMB 32.2+ RMB-519
     // Content-Type is set to application/json by sendJsonObject
     return client.getToken(bufferHttpRequest)
         .compose(request -> request.sendJsonObject(content))
+        .expecting(ChattyHttpResponseExpectation.SC_OK)
         .compose(response -> {
           log.info("Record imported via copycat");
           return Future.succeededFuture();
