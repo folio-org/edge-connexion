@@ -12,11 +12,11 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.edge.core.utils.ApiKeyUtils;
+import org.folio.okapi.common.ChattyHttpResponseExpectation;
 import org.folio.okapi.common.XOkapiHeaders;
 import org.junit.After;
 import org.junit.Assert;
@@ -57,7 +57,7 @@ public class MainVerticleTest {
         ctx.response().end("Bad Request");
         return;
       }
-      JsonObject login = ctx.getBodyAsJson();
+      JsonObject login = ctx.body().asJsonObject();
       String username = login.getString("username");
       String password = login.getString("password");
       // only accept the diku that is in src/test/resources/ephemeral.properties
@@ -86,12 +86,20 @@ public class MainVerticleTest {
         ctx.response().setStatusCode(401);
         ctx.response().putHeader("Content-Type", "text/plain");
         ctx.response().end("Bad or missing token");
+        return;
+      }
+      if (!"diku".equals(request.getHeader(XOkapiHeaders.TENANT))) {
+        ctx.response().setStatusCode(401);
+        ctx.response().putHeader("Content-Type", "text/plain");
+        ctx.response().end("Token is " + request.getHeader(XOkapiHeaders.TENANT));
+        return;
       }
       JsonObject copycatImports = ctx.getBodyAsJson();
       if (!MainVerticle.COPYCAT_PROFILE_OCLC.equals(copycatImports.getString("profileId"))) {
         ctx.response().setStatusCode(400);
         ctx.response().putHeader("Content-Type", "text/plain");
         ctx.response().end("Missing profileId");
+        return;
       }
       try {
         byte[] decode = Base64.getDecoder().decode(copycatImports.getJsonObject("record").getString("marc"));
@@ -101,14 +109,14 @@ public class MainVerticleTest {
           ctx.response().end("Bad request (bad MARC)");
           return;
         }
+        ctx.response().setStatusCode(200);
+        ctx.response().putHeader("Content-Type", "application/json");
+        ctx.response().end(copycatImports.encode());
       } catch (Exception e) {
         ctx.response().setStatusCode(400);
         ctx.response().putHeader("Content-Type", "text/plain");
         ctx.response().end("Bad request");
       }
-      ctx.response().setStatusCode(200);
-      ctx.response().putHeader("Content-Type", "application/json");
-      ctx.response().end(copycatImports.encode());
     });
     vertx.createHttpServer().requestHandler(router).listen(MOCK_PORT)
         .onComplete(context.asyncAssertSuccess(x -> log.info("mock server started OK")));
@@ -163,8 +171,8 @@ public class MainVerticleTest {
     WebClient webClient = WebClient.create(vertx);
     deploy(new MainVerticle())
         .compose(x -> webClient.get(PORT, "localhost", "/admin/health")
-            .expect(ResponsePredicate.SC_OK)
-            .send())
+            .send()
+            .expecting(ChattyHttpResponseExpectation.SC_OK))
         .onComplete(context.asyncAssertSuccess());
   }
 
@@ -173,11 +181,11 @@ public class MainVerticleTest {
     WebClient webClient = WebClient.create(vertx);
     deploy(new MainVerticle())
         .compose(x -> webClient.get(PORT, "localhost", "/admin/health")
-            .expect(ResponsePredicate.SC_OK)
-            .send())
+            .send()
+            .expecting(ChattyHttpResponseExpectation.SC_OK))
         .compose(x -> webClient.get(PORT, "localhost", "/other")
-            .expect(ResponsePredicate.SC_OK)
-            .send())
+            .send()
+            .expecting(ChattyHttpResponseExpectation.SC_OK))
         .onComplete(context.asyncAssertSuccess());
   }
 
@@ -280,7 +288,7 @@ public class MainVerticleTest {
     Buffer response = Buffer.buffer();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
       // context.assertEquals("/authn/login returned status 400", x.getMessage());
-      context.assertEquals("Error: POST /authn/login returned status 400: Bad Request", Client.trimConnexionResponse(response.toString()));
+      context.assertEquals("Error: Login failed. POST /authn/login for tenant 'badlib' and username 'foo' returned status 400: Bad Request", Client.trimConnexionResponse(response.toString()));
     }));
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
@@ -355,7 +363,7 @@ public class MainVerticleTest {
     String localUser = "diku dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("Response status code 400 is not equal to 200", x.getMessage())));
+        context.assertEquals("Response status code 400 is not equal to 200: Bad request (bad MARC)", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
@@ -367,7 +375,7 @@ public class MainVerticleTest {
     String localUser = "diku dikuuser abc321";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("POST /authn/login returned status 400: Bad Request", x.getMessage())));
+        context.assertEquals("Login failed. POST /authn/login for tenant 'diku' and username 'dikuuser' returned status 400: Bad Request", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
@@ -379,7 +387,7 @@ public class MainVerticleTest {
     String localUser = "ukid dikuuser abc123";
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
-        context.assertEquals("POST /authn/login returned status 400: Bad Request", x.getMessage())));
+        context.assertEquals("Login failed. POST /authn/login for tenant 'ukid' and username 'dikuuser' returned status 400: Bad Request", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
