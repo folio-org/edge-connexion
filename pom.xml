@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.folio</groupId>
   <artifactId>edge-connexion</artifactId>
-  <version>1.4.1-SNAPSHOT</version>
+  <version>1.4.1</version>
   <packaging>jar</packaging>
 
   <name>Integrate a direct single record import via OCLC Connexion(r)</name>
@@ -17,7 +17,7 @@
     <url>https://github.com/folio-org/edge-connexion.git</url>
     <connection>scm:git:git://github.com/folio-org/edge-connexion.git</connection>
     <developerConnection>scm:git:git@github.com:folio-org/edge-connexion.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>v1.4.1</tag>
   </scm>
 
   <licenses>
