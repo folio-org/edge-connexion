@@ -1,3 +1,10 @@
+## 1.4.1 2025-05-15
+
+* [EDGCONX-54](https://issues.folio.org/browse/EDGCONX-54) Use OKAPI 6.2.2, Vert.x 4.5.13.
+
+  Okapi 6.2.2 includes OKAPI-1208 fix which ensures that `X-Okapi-Tenant`
+  is sent along with `X-Okapi-Token` which is required by sidecar/Eureka.
+
 ## 1.4.0 2025-03-12
 
 * [EDGCONX-52](https://issues.folio.org/browse/EDGCONX-52) Upgrades AWS SDK to 2.x.
