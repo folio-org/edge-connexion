@@ -234,7 +234,7 @@ public class MainVerticle extends EdgeVerticleCore {
         StringBuilder password = new StringBuilder();
         log.info("Login strategy {} and using tenant {}", loginStrategyType, tenant);
         parseLocalUserFull(connexionRequest.getLocalUser().stripLeading(), tenant, user, password);
-        if (password.length() == 0) {
+        if (password.isEmpty()) {
           return Future.failedFuture("Bad format of localUser");
         }
         client = Client.createLoginClient(clientOptions, tenantUserCache, tenant.toString(),
