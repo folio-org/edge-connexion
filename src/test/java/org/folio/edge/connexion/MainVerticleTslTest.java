@@ -85,6 +85,7 @@ public class MainVerticleTslTest {
 
     assertTrue(webClientOptions.isSsl());
     assertNotNull(webClientOptions.getTrustOptions());
+    assertTrue(webClientOptions.isVerifyHost());
 
     createClientRequest(context, webClientOptions, config);
   }
