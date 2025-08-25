@@ -141,7 +141,7 @@ If truststore parameters need to be populated, `FOLIO_CLIENT_TLS_TRUSTSTORETYPE`
 | `FOLIO_CLIENT_TLS_TRUSTSTORETYPE`       | `NA`              | Set the type of the keystore. Common types include `JKS`, `PKCS12`, and `BCFKS`  |
 | `FOLIO_CLIENT_TLS_TRUSTSTOREPATH`       | `NA`              | Set the location of the keystore file in the local file system                   |
 | `FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD`   | `NA`              | Set the password for the keystore                                                |
-| `FOLIO_CLIENT_TLS_VERIFY_HOST`          | `true`            | Whether to verify hostname.                                                      |
+| `jdk.internal.httpclient.disableHostnameVerification` | `false`  | Whether to disable hostname verification                                    |
 
 ## Additional information
 

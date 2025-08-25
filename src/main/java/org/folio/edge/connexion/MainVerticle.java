@@ -1,5 +1,6 @@
 package org.folio.edge.connexion;
 
+import static org.apache.commons.lang3.SystemProperties.getJdkInternalHttpClientDisableHostNameVerification;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_ENABLED;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPATH;
@@ -30,7 +31,6 @@ import org.folio.edge.core.security.SecureStore;
 import org.folio.edge.core.utils.ApiKeyUtils;
 import org.folio.edge.core.utils.SslConfigurationUtil;
 import org.folio.okapi.common.ChattyHttpResponseExpectation;
-import org.folio.okapi.common.Config;
 import org.folio.okapi.common.refreshtoken.client.Client;
 import org.folio.okapi.common.refreshtoken.client.ClientOptions;
 import org.folio.okapi.common.refreshtoken.tokencache.TenantUserCache;
@@ -40,7 +40,6 @@ public class MainVerticle extends EdgeVerticleCore {
   // ID of : https://github.com/folio-org/mod-copycat/blob/master/src/main/resources/reference-data/profiles/oclc-worldcat.json
   static final String COPYCAT_PROFILE_OCLC = "f26df83c-aa25-40b6-876e-96852c3d4fd4";
   static final String LOGIN_STRATEGY = "login_strategy";
-  static final String FOLIO_CLIENT_TLS_VERIFY_HOST = "FOLIO_CLIENT_TLS_VERIFY_HOST";
   private static final int MAX_RECORD_SIZE = 100000;
   private static final int DEFAULT_PORT = 8081;
   private static final Logger log = LogManager.getLogger(MainVerticle.class);
@@ -269,8 +268,9 @@ public class MainVerticle extends EdgeVerticleCore {
       String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
       String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
       String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
-      // FOLIO_CLIENT_TLS_VERIFY_HOST not part of edge-common Constants
-      Boolean verifyHost = Config.getSysConfBoolean(FOLIO_CLIENT_TLS_VERIFY_HOST, true, config());
+      String prop = getJdkInternalHttpClientDisableHostNameVerification();
+      boolean disableVerifyHostname = Boolean.parseBoolean(prop);
+
       if (StringUtils.isNotEmpty(truststoreType)
           && StringUtils.isNotEmpty(truststorePath)
           && StringUtils.isNotEmpty(truststorePassword)) {
@@ -284,7 +284,7 @@ public class MainVerticle extends EdgeVerticleCore {
 
         webClientOptions
             .setTrustOptions(trustOptions)
-            .setVerifyHost(verifyHost);
+            .setVerifyHost(!disableVerifyHostname);
       } else {
         log.info("Web client truststore options are not set");
       }
