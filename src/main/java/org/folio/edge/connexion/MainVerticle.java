@@ -1,5 +1,6 @@
 package org.folio.edge.connexion;
 
+import static org.apache.commons.lang3.SystemProperties.getJdkInternalHttpClientDisableHostNameVerification;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_ENABLED;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD;
 import static org.folio.edge.core.Constants.FOLIO_CLIENT_TLS_TRUSTSTOREPATH;
@@ -232,7 +233,7 @@ public class MainVerticle extends EdgeVerticleCore {
         StringBuilder password = new StringBuilder();
         log.info("Login strategy {} and using tenant {}", loginStrategyType, tenant);
         parseLocalUserFull(connexionRequest.getLocalUser().stripLeading(), tenant, user, password);
-        if (password.length() == 0) {
+        if (password.isEmpty()) {
           return Future.failedFuture("Bad format of localUser");
         }
         client = Client.createLoginClient(clientOptions, tenantUserCache, tenant.toString(),
@@ -267,6 +268,9 @@ public class MainVerticle extends EdgeVerticleCore {
       String truststoreType = config().getString(FOLIO_CLIENT_TLS_TRUSTSTORETYPE);
       String truststorePath = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPATH);
       String truststorePassword = config().getString(FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD);
+      String prop = getJdkInternalHttpClientDisableHostNameVerification();
+      boolean disableVerifyHostname = Boolean.parseBoolean(prop);
+
       if (StringUtils.isNotEmpty(truststoreType)
           && StringUtils.isNotEmpty(truststorePath)
           && StringUtils.isNotEmpty(truststorePassword)) {
@@ -280,7 +284,7 @@ public class MainVerticle extends EdgeVerticleCore {
 
         webClientOptions
             .setTrustOptions(trustOptions)
-            .setVerifyHost(false);  //Hardcoded now. Later it could be configurable using env vars.
+            .setVerifyHost(!disableVerifyHostname);
       } else {
         log.info("Web client truststore options are not set");
       }
