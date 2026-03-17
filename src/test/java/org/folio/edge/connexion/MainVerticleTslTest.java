@@ -11,9 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServer;
@@ -62,7 +60,7 @@ public class MainVerticleTslTest {
 
   @After
   public void tearDown(TestContext context) {
-    vertx.close(context.asyncAssertSuccess());
+    vertx.close();
   }
 
   @Test
@@ -77,7 +75,7 @@ public class MainVerticleTslTest {
     final HttpServer httpServer = vertx.createHttpServer(serverOptions);
     httpServer
         .requestHandler(req -> req.response().putHeader(HttpHeaders.CONTENT_TYPE, Constants.TEXT_PLAIN).end(RESPONSE_MESSAGE))
-        .listen(config.getInteger(Constants.SYS_PORT), getCommonServerHandler(config));
+        .listen(config.getInteger(Constants.SYS_PORT));
 
     final OkapiClientFactory okapiClientFactory = OkapiClientFactoryInitializer.createInstance(vertx, config);
     final OkapiClient okapiClient = okapiClientFactory.getOkapiClient(TENANT);
@@ -102,7 +100,7 @@ public class MainVerticleTslTest {
     final HttpServer httpServer = vertx.createHttpServer(serverOptions);
     httpServer
         .requestHandler(req -> req.response().putHeader(HttpHeaders.CONTENT_TYPE, Constants.TEXT_PLAIN).end(RESPONSE_MESSAGE))
-        .listen(config.getInteger(Constants.SYS_PORT), getCommonServerHandler(config));
+        .listen(config.getInteger(Constants.SYS_PORT));
 
     final OkapiClientFactory okapiClientFactory = OkapiClientFactoryInitializer.createInstance(vertx, config);
     final OkapiClient okapiClient = okapiClientFactory.getOkapiClient(TENANT);
@@ -112,10 +110,6 @@ public class MainVerticleTslTest {
     assertNull(webClientOptions.getTrustOptions());
 
     createClientRequest(context, webClientOptions, config);
-  }
-
-  private static Handler<AsyncResult<HttpServer>> getCommonServerHandler(JsonObject config) {
-    return http -> logger.info("Server started on port {}", config.getInteger(Constants.SYS_PORT));
   }
 
   @Test
@@ -172,6 +166,6 @@ public class MainVerticleTslTest {
     vertx = Vertx.vertx();
 
     final DeploymentOptions opt = new DeploymentOptions().setConfig(config);
-    vertx.deployVerticle(MainVerticle.class.getName(), opt, context.asyncAssertSuccess());
+    vertx.deployVerticle(MainVerticle.class.getName(), opt).onComplete(context.asyncAssertSuccess());
   }
 }

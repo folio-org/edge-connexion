@@ -105,7 +105,7 @@ public class MainVerticleSslTest {
     vertx = Vertx.vertx();
 
     final DeploymentOptions opt = new DeploymentOptions().setConfig(config);
-    vertx.deployVerticle(MainVerticle.class.getName(), opt, context.asyncAssertSuccess());
+    vertx.deployVerticle(MainVerticle.class.getName(), opt).onComplete(context.asyncAssertSuccess());
   }
 
   private JsonObject getCommonConfig() {
