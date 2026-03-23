@@ -94,7 +94,7 @@ public class MainVerticleTest {
         ctx.response().end("Token is " + request.getHeader(XOkapiHeaders.TENANT));
         return;
       }
-      JsonObject copycatImports = ctx.getBodyAsJson();
+      JsonObject copycatImports = ctx.body().asJsonObject();
       if (!MainVerticle.COPYCAT_PROFILE_OCLC.equals(copycatImports.getString("profileId"))) {
         ctx.response().setStatusCode(400);
         ctx.response().putHeader("Content-Type", "text/plain");
