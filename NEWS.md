@@ -1,3 +1,8 @@
+## 1.5.0 2026-04-16
+
+* [EDGCONX-56](https://issues.folio.org/browse/EDGCONX-56) Verifies hostname by default
+* [EDGCONX-58](https://issues.folio.org/browse/EDGCONX-58) Upgrades Vert.x to 5.x.
+
 ## 1.4.1 2025-05-15
 
 * [EDGCONX-54](https://issues.folio.org/browse/EDGCONX-54) Use OKAPI 6.2.2, Vert.x 4.5.13.
