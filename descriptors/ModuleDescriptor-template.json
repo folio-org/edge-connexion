@@ -21,5 +21,21 @@
       "version" : "1.0"
     }
   ],
-  "permissionSets" : [ ]
+  "permissionSets" : [ ],
+  "launchDescriptor": {
+    "dockerImage": "${artifactId}:${version}",
+    "dockerPull": false,
+    "dockerArgs": {
+      "HostConfig": {
+        "Memory": 35913941,
+        "PortBindings": { "8081/tcp": [ { "HostPort": "%p" } ] }
+      }
+    },
+    "env": [
+      { "name": "JAVA_OPTIONS",
+        "value": "-XX:MaxRAMPercentage=66.0"
+      }
+    ]
+  }
+
 }
