@@ -1,0 +1,114 @@
+{
+  "description": "edge-connexion configuration using edge-common 5.0.0. Values come from the existing ModuleDescriptor and runtime defaults; they have not been verified against the Bugfest baseline (3 standalone tenants and 11 consortia tenants). Null values require deployment-specific input or indicate no recommended override; see each description. ADR-0013 schema validation is pending. This module has no database and does not use a Eureka sidecar.",
+  "moduleDefaults": {
+    "resources": [
+      {
+        "name": "cpu",
+        "value": null,
+        "description": "CPU allocation recommendation is pending deployment baseline verification."
+      },
+      {
+        "name": "memory",
+        "value": null,
+        "description": "Container memory limit in MiB. The existing ModuleDescriptor specifies 35913941 bytes (approximately 34.25 MiB); a recommended limit remains undetermined pending deployment baseline verification."
+      },
+      {
+        "name": "memoryReservation",
+        "value": null,
+        "description": "Memory reservation recommendation is pending deployment baseline verification."
+      }
+    ],
+    "java": [
+      {
+        "name": "MaxRAMPercentage",
+        "value": "66.0",
+        "description": "Maximum heap as a percentage of available memory, matching the existing JAVA_OPTIONS setting."
+      }
+    ],
+    "deployment": {
+      "isHaSupported": true,
+      "replicasRecommendedCount": null,
+      "description": "Multiple instances can serve independent Connexion TCP connections with the same backend and secure-store configuration. Authentication caches are local to each instance. Recommended replica count remains undetermined pending deployment baseline verification."
+    },
+    "kong": {
+      "timeouts": {
+        "connect": null,
+        "send": null,
+        "read": null
+      },
+      "description": "Connexion uses a TCP protocol on port 8081 by default, with HTTP GET health checks on the same listener. No module-specific Kong HTTP timeout recommendation applies to incoming Connexion traffic; configure TCP routing separately."
+    },
+    "EnvVars": [
+      {
+        "name": "JAVA_OPTIONS",
+        "value": "-XX:MaxRAMPercentage=66.0",
+        "description": "JVM options passed by the container launcher, matching the ModuleDescriptor. Append -Dokapi_url=<backend URL> (required unless supplied in Vert.x configuration). Optional Java system properties: -Dport=8081, -Dlogin_strategy=key (key or full), -Dsecure_store=ephemeral (ephemeral, AwsSsm or Vault), -Dsecure_store_props=<properties file path or URL>, -Dlog_level=INFO and -Drequest_timeout_ms=30000 (outbound connection and idle timeout). In key mode, configure the secure store with institutional-user credentials; full mode takes tenant, user and password from the Connexion request. These properties are not standalone environment variables. The edge-common token_cache_* properties do not tune the refresh-token cache used for Connexion imports, which has a fixed capacity of 100. api_key_sources and response_compression do not apply to this TCP listener. Keep jdk.internal.httpclient.disableHostnameVerification at its default false.",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_TYPE",
+        "value": null,
+        "description": "Optional server keystore type, for example JKS, PKCS12 or BCFKS. Setting a non-empty value enables TLS on the Connexion and health-check listener and requires keystore location and password. Leave unset for a plain TCP listener.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_LOCATION",
+        "value": null,
+        "description": "Path to the server keystore mounted in the container. Required when server TLS is enabled.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_PASSWORD",
+        "value": null,
+        "description": "Server keystore password supplied through deployment secret management. Required when server TLS is enabled.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEY_ALIAS",
+        "value": null,
+        "description": "Optional alias of the server key within the keystore.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEY_PASSWORD",
+        "value": null,
+        "description": "Optional password for the selected server key if separately protected. Supply through deployment secret management.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TLS_ENABLED",
+        "value": "false",
+        "description": "Enable TLS for outbound FOLIO web-client connections. Use an HTTPS okapi_url for a TLS backend. Custom truststore settings are optional.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TLS_TRUSTSTORETYPE",
+        "value": null,
+        "description": "Optional outbound TLS truststore type, for example JKS, PKCS12 or BCFKS. A custom truststore is applied only when TLS is enabled and type, path and password are all non-empty.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TLS_TRUSTSTOREPATH",
+        "value": null,
+        "description": "Path to the custom outbound TLS truststore mounted in the container. Set together with truststore type and password.",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TLS_TRUSTSTOREPASSWORD",
+        "value": null,
+        "description": "Custom outbound TLS truststore password supplied through deployment secret management. Set together with truststore type and path.",
+        "type": "CONFIG",
+        "essential": false
+      }
+    ]
+  }
+}
