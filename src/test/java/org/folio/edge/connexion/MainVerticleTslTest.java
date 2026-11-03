@@ -1,9 +1,5 @@
 package org.folio.edge.connexion;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 
 import java.security.Security;
@@ -20,8 +16,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
@@ -60,56 +54,40 @@ public class MainVerticleTslTest {
 
   @After
   public void tearDown(TestContext context) {
-    vertx.close();
+    vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   @Test
-  public void testServerClientTlsCommunication(TestContext context) throws IllegalAccessException {
+  public void testServerClientTlsCommunication(TestContext context) {
     final JsonObject config = getCommonConfig(true);
+    final OkapiClientFactory factory = OkapiClientFactoryInitializer.createInstance(vertx, config);
+    final WebClient client = factory.getOkapiClient(TENANT).client;
 
-    final HttpServerOptions serverOptions = new HttpServerOptions();
-    serverOptions.setPort(config.getInteger(Constants.SYS_PORT));
-
-    SslConfigurationUtil.configureSslServerOptionsIfEnabled(config, serverOptions);
-
-    final HttpServer httpServer = vertx.createHttpServer(serverOptions);
-    httpServer
-        .requestHandler(req -> req.response().putHeader(HttpHeaders.CONTENT_TYPE, Constants.TEXT_PLAIN).end(RESPONSE_MESSAGE))
-        .listen(config.getInteger(Constants.SYS_PORT));
-
-    final OkapiClientFactory okapiClientFactory = OkapiClientFactoryInitializer.createInstance(vertx, config);
-    final OkapiClient okapiClient = okapiClientFactory.getOkapiClient(TENANT);
-    final WebClientOptions webClientOptions = (WebClientOptions) FieldUtils.readDeclaredField(okapiClient.client, "options", true);
-
-    assertTrue(webClientOptions.isSsl());
-    assertNotNull(webClientOptions.getTrustOptions());
-    assertTrue(webClientOptions.isVerifyHost());
-
-    createClientRequest(context, webClientOptions, config);
+    createTlsServer(config)
+        .listen(config.getInteger(Constants.SYS_PORT))
+        .onComplete(context.asyncAssertSuccess(server -> createClientRequest(context, client, config)));
   }
 
-  @Test(expected = java.net.ConnectException.class)
-  public void testFailingServerClientTlsCommunication(TestContext context) throws IllegalAccessException {
+  @Test
+  public void testFailingServerClientTlsCommunication(TestContext context) {
     final JsonObject config = getCommonConfig(false);
+    final OkapiClientFactory factory = OkapiClientFactoryInitializer.createInstance(vertx, config);
+    final WebClient client = factory.getOkapiClient(TENANT).client;
 
+    createTlsServer(config)
+        .listen(config.getInteger(Constants.SYS_PORT))
+        .onComplete(context.asyncAssertSuccess(server ->
+            client.get(config.getInteger(Constants.SYS_PORT), "localhost", "/")
+                .send()
+                .onComplete(context.asyncAssertFailure())));
+  }
+
+  private HttpServer createTlsServer(JsonObject config) {
     final HttpServerOptions serverOptions = new HttpServerOptions();
-    serverOptions.setPort(config.getInteger(Constants.SYS_PORT));
-
     SslConfigurationUtil.configureSslServerOptionsIfEnabled(config, serverOptions);
-
-    final HttpServer httpServer = vertx.createHttpServer(serverOptions);
-    httpServer
-        .requestHandler(req -> req.response().putHeader(HttpHeaders.CONTENT_TYPE, Constants.TEXT_PLAIN).end(RESPONSE_MESSAGE))
-        .listen(config.getInteger(Constants.SYS_PORT));
-
-    final OkapiClientFactory okapiClientFactory = OkapiClientFactoryInitializer.createInstance(vertx, config);
-    final OkapiClient okapiClient = okapiClientFactory.getOkapiClient(TENANT);
-    final WebClientOptions webClientOptions = (WebClientOptions) FieldUtils.readDeclaredField(okapiClient.client, "options", true);
-
-    assertFalse(webClientOptions.isSsl());
-    assertNull(webClientOptions.getTrustOptions());
-
-    createClientRequest(context, webClientOptions, config);
+    return vertx.createHttpServer(serverOptions)
+        .requestHandler(req -> req.response()
+            .putHeader(HttpHeaders.CONTENT_TYPE, Constants.TEXT_PLAIN).end(RESPONSE_MESSAGE));
   }
 
   @Test
@@ -123,7 +101,7 @@ public class MainVerticleTslTest {
     JsonObject config = new JsonObject().put(Constants.SYS_PORT, serverPort)
         .put(Constants.SYS_OKAPI_URL, OKAPI_URL)
         .put(Constants.SYS_SECURE_STORE_PROP_FILE, "src/test/resources/ephemeral.properties")
-        .put(Constants.SYS_LOG_LEVEL, "TRACE")
+        .put(Constants.SYS_LOG_LEVEL, "INFO")
         .put(Constants.SYS_REQUEST_TIMEOUT_MS, 5000)
         .put(Constants.SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_TYPE, KEYSTORE_TYPE)
         .put(Constants.SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_LOCATION, KEYSTORE_PATH)
@@ -140,8 +118,7 @@ public class MainVerticleTslTest {
     }
   }
 
-  private static void createClientRequest(TestContext context, WebClientOptions webClientOptions, JsonObject config) {
-    final WebClient webClient = WebClient.create(vertx, webClientOptions);
+  private static void createClientRequest(TestContext context, WebClient webClient, JsonObject config) {
     webClient.get(config.getInteger(Constants.SYS_PORT), "localhost", "/")
         .send()
         .onComplete(context.asyncAssertSuccess(response -> {

@@ -260,12 +260,17 @@ public class MainVerticleTest {
     String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "diku", "dikuuser");
     MainVerticle mainVerticle = new MainVerticle();
     Buffer response = Buffer.buffer();
-    mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x ->
-        context.assertEquals("Import ok", Client.trimConnexionResponse(response.toString()))
-    ));
+    mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket, response))
+        .compose(socket -> {
+          var responseReceived = context.async();
+          socket.closeHandler(x -> {
+            context.assertEquals("Import ok", Client.trimConnexionResponse(response.toString()));
+            responseReceived.complete();
+          });
+          return handleResponse(socket, response);
+        })
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE + "\0"));
   }
 
@@ -286,13 +291,18 @@ public class MainVerticleTest {
     String apiKey = ApiKeyUtils.generateApiKey("gYn0uFv3Lf", "badlib", "foo");
     MainVerticle mainVerticle = new MainVerticle();
     Buffer response = Buffer.buffer();
-    mainVerticle.setCompleteHandler(context.asyncAssertFailure(x -> {
-      // context.assertEquals("/authn/login returned status 400", x.getMessage());
-      context.assertEquals("Error: Login failed. POST /authn/login for tenant 'badlib' and username 'foo' returned status 400: Bad Request", Client.trimConnexionResponse(response.toString()));
-    }));
+    mainVerticle.setCompleteHandler(context.asyncAssertFailure());
     deploy(mainVerticle, new JsonObject())
         .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
-        .compose(socket -> handleResponse(socket, response))
+        .compose(socket -> {
+          var responseReceived = context.async();
+          socket.closeHandler(x -> {
+            context.assertEquals("Error: Login failed. POST /authn/login for tenant 'badlib' and username 'foo' returned status 400: Bad Request",
+                Client.trimConnexionResponse(response.toString()));
+            responseReceived.complete();
+          });
+          return handleResponse(socket, response);
+        })
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE + "\0"));
   }
 

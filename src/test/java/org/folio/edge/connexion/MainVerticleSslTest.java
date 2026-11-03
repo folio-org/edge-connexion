@@ -115,7 +115,7 @@ public class MainVerticleSslTest {
         .put(SYS_PORT, serverPort)
         .put(SYS_OKAPI_URL, "http://localhost:" + okapiPort)
         .put(SYS_SECURE_STORE_PROP_FILE, "src/test/resources/ephemeral.properties")
-        .put(SYS_LOG_LEVEL, "TRACE")
+        .put(SYS_LOG_LEVEL, "INFO")
         .put(SYS_REQUEST_TIMEOUT_MS, 5000);
   }
 }
