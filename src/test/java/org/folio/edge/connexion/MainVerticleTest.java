@@ -6,6 +6,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -42,11 +43,14 @@ public class MainVerticleTest {
   private String expectMARC;
 
   Vertx vertx;
+  private NetClient netClient;
 
   @Before
   public void before(TestContext context) {
     expectMARC = MARC_SAMPLE;
     vertx = Vertx.vertx();
+    // Retain the client until teardown: Vert.x cleans up clients that become unreachable.
+    netClient = vertx.createNetClient();
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
     router.post("/authn/login").handler(ctx -> {
@@ -125,7 +129,9 @@ public class MainVerticleTest {
   @After
   public void after(TestContext context) {
     log.info("after called");
-    vertx.close().onComplete(context.asyncAssertSuccess());
+    netClient.close()
+        .compose(x -> vertx.close())
+        .onComplete(context.asyncAssertSuccess());
   }
 
   @Test
@@ -196,7 +202,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("OCLC import size exceeded", x.getMessage())));
     deploy(mainVerticle)
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(socket -> socket.write("00016123456"));
   }
 
@@ -206,7 +212,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("No records provided", x.getMessage())));
     deploy(mainVerticle)
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(socket -> socket.write("U4User").map(socket))
         .compose(NetSocket::close);
   }
@@ -217,7 +223,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("No records provided", x.getMessage())));
     deploy(mainVerticle)
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(socket -> socket.write("U4User\0").map(socket))
         .compose(NetSocket::close);
   }
@@ -228,7 +234,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("No records provided", x.getMessage())));
     deploy(mainVerticle)
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(socket -> socket.write("\0").map(socket))
         .compose(NetSocket::close);
   }
@@ -239,7 +245,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("access denied", x.getMessage())));
     deploy(mainVerticle, new JsonObject())
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("U1A" + MARC_SAMPLE));
   }
@@ -250,7 +256,7 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE));
   }
@@ -262,7 +268,7 @@ public class MainVerticleTest {
     Buffer response = Buffer.buffer();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(socket -> {
           var responseReceived = context.async();
           socket.closeHandler(x -> {
@@ -280,7 +286,7 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "key"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + (apiKey.length() + 4) + "  " + apiKey + "  " + MARC_SAMPLE));
   }
@@ -293,7 +299,7 @@ public class MainVerticleTest {
     Buffer response = Buffer.buffer();
     mainVerticle.setCompleteHandler(context.asyncAssertFailure());
     deploy(mainVerticle, new JsonObject())
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(socket -> {
           var responseReceived = context.async();
           socket.closeHandler(x -> {
@@ -314,7 +320,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("Error retrieving password", x.getMessage())));
     deploy(mainVerticle, new JsonObject())
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + apiKey.length() + apiKey + MARC_SAMPLE));
   }
@@ -325,7 +331,7 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
@@ -337,12 +343,12 @@ public class MainVerticleTest {
     MainVerticle mainVerticle = new MainVerticle();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess(x -> async.complete()));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
     async.await();
     mainVerticle.setCompleteHandler(context.asyncAssertSuccess());
-    vertx.createNetClient().connect(PORT, "localhost")
+    netClient.connect(PORT, "localhost")
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
@@ -363,7 +369,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("Bad format of localUser", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
@@ -375,7 +381,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("Response status code 400 is not equal to 200: Bad request (bad MARC)", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_REJECT));
   }
@@ -387,7 +393,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("Login failed. POST /authn/login for tenant 'diku' and username 'dikuuser' returned status 400: Bad Request", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
@@ -399,7 +405,7 @@ public class MainVerticleTest {
     mainVerticle.setCompleteHandler(context.asyncAssertFailure(x ->
         context.assertEquals("Login failed. POST /authn/login for tenant 'ukid' and username 'dikuuser' returned status 400: Bad Request", x.getMessage())));
     deploy(mainVerticle, new JsonObject().put("login_strategy", "full"))
-        .compose(x -> vertx.createNetClient().connect(PORT, "localhost"))
+        .compose(x -> netClient.connect(PORT, "localhost"))
         .compose(MainVerticleTest::handleResponse)
         .compose(socket -> socket.write("A" + localUser.length() + localUser + MARC_SAMPLE));
   }
