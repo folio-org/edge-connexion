@@ -1,3 +1,14 @@
+## 1.5.1 2026-03-11
+
+* [EDGCONX-64](https://folio-org.atlassian.net/browse/EDGCONX-64) Vert.x 5.2.2, edge-common 5.1.1.
+  Fix TLS tests that relied on Vert.x private implementation details.
+  Exercise the configured WebClient directly instead of casting its private options field.
+  Wait for the TLS server to start and assert asynchronous request failure explicitly.
+  Fix import-test races by checking response content after the socket closes. Lower TLS test
+  logging to INFO to suppress Netty diagnostic traces.
+* [EDGCONX-61](https://folio-org.atlassian.net/browse/EDGCONX-61) Add `DeployConfig.json` .
+* [EDGCONX-33](https://folio-org.atlassian.net/browse/EDGCONX-33) Add launch descriptor block.
+
 ## 1.5.0 2026-04-16
 
 * [EDGCONX-56](https://issues.folio.org/browse/EDGCONX-56) Verifies hostname by default
