@@ -116,16 +116,23 @@ Configuration information is specified in two forms:
 | `request_timeout_ms`      | `30000`             | Request Timeout                                                           |
 | `api_key_sources`         | `PARAM,HEADER,PATH` | Defines the sources (order of precendence) of the API key.                |
 
-### Env variables for TLS configuration for Http server
+### Env variables for TLS configuration for the Connexion server
 
-To configure Transport Layer Security (TLS) for the HTTP server in an edge module, the following configuration parameters should be used.
-Parameters marked as Required are required only in case when TLS for the server should be enabled.
+Server TLS is optional. With `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_TYPE`
+unset or empty, the module runs without TLS, accepting plain TCP Connexion
+requests and HTTP health checks on the same port (8081 by default).
+
+Setting `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_TYPE` to a non-empty value
+enables TLS for that listener, including health checks (which then use HTTPS).
+The keystore location and password must also be supplied; startup fails if
+either is missing or empty. These settings have `essential: false` in
+`DeployConfig.json` because they are not required to run the module without TLS.
 
 | Property                                            | Default          | Description                                                                                 |
 |-----------------------------------------------------|------------------|---------------------------------------------------------------------------------------------|
-| `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_TYPE`     | `NA`             | (Required). Set the type of the keystore. Common types include `JKS`, `PKCS12`, and `BCFKS` |
-| `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_LOCATION` | `NA`             | (Required). Set the location of the keystore file in the local file system                  |
-| `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_PASSWORD` | `NA`             | (Required). Set the password for the keystore                                               |
+| `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_TYPE`     | Unset            | Enables server TLS when non-empty. Common types include `JKS`, `PKCS12`, and `BCFKS` |
+| `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_LOCATION` | Unset            | Required when server TLS is enabled. Location of the keystore file in the local file system |
+| `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEYSTORE_PASSWORD` | Unset            | Required when server TLS is enabled. Password for the keystore                              |
 | `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEY_ALIAS`         | `NA`             | Set the alias of the key within the keystore.                                               |
 | `SPRING_SSL_BUNDLE_JKS_WEBSERVER_KEY_PASSWORD`      | `NA`             | Optional param that points to a password of `KEY_ALIAS` if it protected                     |
 
